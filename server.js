@@ -1,15 +1,15 @@
-require('dotenv').config();
 const express = require('express');
 const crypto  = require('crypto');
-const Database = require('better-sqlite3');
+const fs      = require('fs');
+const path    = require('path');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
 
-// ─── CORS — pozwól GitHub Pages łączyć się z tym backendem ───────────────────
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+// CORS
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
@@ -18,67 +18,121 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '5mb' }));
 
-// ─── BAZA SQLite ──────────────────────────────────────────────────────────────
-const db = new Database('orders.db');
-db.exec(`
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_uuid TEXT UNIQUE NOT NULL,
-    p24_session_id TEXT,
-    p24_order_id TEXT,
-    customer_name TEXT,
-    customer_email TEXT,
-    customer_phone TEXT,
-    customer_address TEXT,
-    customer_notes TEXT,
-    cart_json TEXT,
-    total_amount INTEGER,
-    status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    paid_at DATETIME
-  )
-`);
+// Zamówienia w pliku JSON
+const ORDERS_FILE = path.join(__dirname, 'orders.json');
+function loadOrders() {
+    try { return JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf8')); }
+    catch(e) { return []; }
+}
+function saveOrder(order) {
+    const orders = loadOrders();
+    orders.push(order);
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+}
 
-// ─── KONFIGURACJA ─────────────────────────────────────────────────────────────
+// Konfiguracja
 const P24_SANDBOX  = process.env.P24_SANDBOX !== 'false';
 const P24_BASE     = P24_SANDBOX ? 'https://sandbox.przelewy24.pl' : 'https://secure.przelewy24.pl';
 const P24_MERCHANT = parseInt(process.env.P24_MERCHANT_ID || '0');
 const P24_POS_ID   = parseInt(process.env.P24_POS_ID || process.env.P24_MERCHANT_ID || '0');
 const P24_API_KEY  = process.env.P24_API_KEY || '';
 const P24_SECRET   = process.env.P24_SECRET  || '';
-const SITE_URL     = process.env.SITE_URL    || '';  // np. https://konfiguratorpolki.github.io/nowyprojekt3
+const SITE_URL     = process.env.SITE_URL    || '';
 const TEST_MODE    = (P24_MERCHANT === 0);
+const ADMIN_PASS   = process.env.ADMIN_PASSWORD || 'polki2024';
+const RESEND_KEY   = process.env.RESEND_API_KEY || '';
+const MAIL_TO      = process.env.MAIL_TO || '';
 
-// ─── EMAIL ────────────────────────────────────────────────────────────────────
-let mailer = null;
-try {
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-        const nodemailer = require('nodemailer');
-        mailer = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.gmail.com',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            secure: false,
-            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        });
-        console.log('📧 Email:', process.env.SMTP_USER);
-    }
-} catch(e) {}
+console.log('📧 RESEND_KEY:', RESEND_KEY ? `ustawiony (${RESEND_KEY.slice(0,8)}...)` : 'BRAK');
+console.log('📧 MAIL_TO:', MAIL_TO || 'BRAK');
 
 function p24Sign(data) {
     return crypto.createHash('sha384').update(JSON.stringify(data)).digest('hex');
 }
 
-// ─── RATE LIMITING ────────────────────────────────────────────────────────────
 app.use('/api/create-order', rateLimit({ windowMs: 15*60*1000, max: 15 }));
 
-// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
+// Health check
 app.get('/', (req, res) => res.json({ status: 'ok', mode: TEST_MODE ? 'test' : 'production' }));
 
-// ─── TWORZENIE ZAMÓWIENIA ─────────────────────────────────────────────────────
+// Panel zamówień
+app.get('/zamowienia', (req, res) => {
+    const pass = req.query.pass;
+    if (pass !== ADMIN_PASS) {
+        return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Panel zamówień</title>
+        <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f3f4f6}
+        .box{background:white;padding:40px;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.1);text-align:center}
+        input{padding:10px 16px;border:1px solid #ddd;border-radius:8px;margin:10px 0;width:200px;font-size:16px}
+        button{padding:10px 24px;background:#16a34a;color:white;border:none;border-radius:8px;cursor:pointer;font-size:16px}</style>
+        </head><body><div class="box"><h2>🔐 Panel zamówień</h2>
+        <form onsubmit="location.href='/zamowienia?pass='+document.getElementById('p').value;return false">
+        <input id="p" type="password" placeholder="Hasło"><br>
+        <button type="submit">Zaloguj</button></form></div></body></html>`);
+    }
+
+    const orders = loadOrders().reverse();
+    const rows = orders.map(o => {
+        const cart = JSON.parse(o.cart_json || '[]');
+        const total = ((o.total_amount||0)/100).toFixed(2);
+        const statusColor = o.status === 'paid' ? '#16a34a' : o.status === 'paid_test' ? '#ca8a04' : '#6b7280';
+        const statusLabel = o.status === 'paid' ? '✅ Opłacone' : o.status === 'paid_test' ? '🧪 Test' : '⏳ Oczekuje';
+        const items = cart.map(i => `${i.name} x${i.quantity}`).join(', ');
+        const date = new Date(o.created_at).toLocaleString('pl-PL');
+        return `<tr>
+            <td>${date}</td>
+            <td><b>${o.customer_name}</b><br><small>${o.customer_email}</small><br><small>${o.customer_phone}</small></td>
+            <td><small>${o.customer_address}</small></td>
+            <td><small>${items}</small></td>
+            <td><b>${total} zł</b></td>
+            <td style="color:${statusColor}">${statusLabel}</td>
+            <td><small>${o.order_uuid.slice(0,8)}</small></td>
+        </tr>`;
+    }).join('');
+
+    const totalRevenue = orders.filter(o => o.status === 'paid' || o.status === 'paid_test')
+        .reduce((s, o) => s + (o.total_amount||0), 0) / 100;
+
+    res.send(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Panel zamówień</title>
+    <style>
+        body{font-family:sans-serif;margin:0;background:#f3f4f6;color:#111}
+        .header{background:#16a34a;color:white;padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+        .header h1{margin:0;font-size:22px}
+        .stats{display:flex;gap:16px;padding:24px 32px}
+        .stat{background:white;border-radius:10px;padding:16px 24px;flex:1;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+        .stat .val{font-size:28px;font-weight:bold;color:#16a34a}
+        .stat .lbl{color:#6b7280;font-size:14px}
+        .table-wrap{padding:0 32px 32px}
+        table{width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+        th{background:#f9fafb;padding:12px 16px;text-align:left;font-size:13px;color:#6b7280;border-bottom:1px solid #e5e7eb}
+        td{padding:12px 16px;border-bottom:1px solid #f3f4f6;vertical-align:top;font-size:14px}
+        tr:hover td{background:#f9fafb}
+        .empty{text-align:center;padding:48px;color:#6b7280}
+    </style>
+    </head><body>
+    <div class="header"><h1>🛒 Panel zamówień — Konfigurator Półek</h1>
+    <span>${orders.length} zamówień</span></div>
+    <div class="stats">
+        <div class="stat"><div class="val">${orders.length}</div><div class="lbl">Wszystkie zamówienia</div></div>
+        <div class="stat"><div class="val">${orders.filter(o=>o.status==='paid').length}</div><div class="lbl">Opłacone</div></div>
+        <div class="stat"><div class="val">${totalRevenue.toFixed(2)} zł</div><div class="lbl">Łączna wartość</div></div>
+    </div>
+    <div class="table-wrap">
+    ${orders.length === 0 ? '<div class="empty">Brak zamówień</div>' : `
+    <table>
+        <thead><tr>
+            <th>Data</th><th>Klient</th><th>Adres</th><th>Produkty</th><th>Kwota</th><th>Status</th><th>Nr</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+    </table>`}
+    </div></body></html>`);
+});
+
+// Tworzenie zamówienia
 app.post('/api/create-order', async (req, res) => {
     try {
         const { customer, cart, totals } = req.body;
-
         if (!customer?.fullName || !customer?.email || !customer?.phone || !customer?.address)
             return res.status(400).json({ error: 'Brakujące dane klienta.' });
         if (!cart?.length)
@@ -86,84 +140,70 @@ app.post('/api/create-order', async (req, res) => {
 
         const amountGrosze = Math.round((totals?.total || 0) * 100);
         if (amountGrosze < 100)
-            return res.status(400).json({ error: 'Kwota zamówienia za niska.' });
+            return res.status(400).json({ error: 'Kwota za niska.' });
 
         const orderUuid = crypto.randomUUID();
         const sessionId = `POLKA-${orderUuid}`;
 
-        db.prepare(`
-            INSERT INTO orders
-              (order_uuid, p24_session_id, customer_name, customer_email,
-               customer_phone, customer_address, customer_notes,
-               cart_json, total_amount, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
-        `).run(orderUuid, sessionId, customer.fullName, customer.email,
-               customer.phone, customer.address, customer.notes || '',
-               JSON.stringify(cart), amountGrosze);
-
+        const order = {
+            order_uuid: orderUuid, p24_session_id: sessionId,
+            customer_name: customer.fullName, customer_email: customer.email,
+            customer_phone: customer.phone, customer_address: customer.address,
+            customer_notes: customer.notes || '', cart_json: JSON.stringify(cart),
+            total_amount: amountGrosze, status: 'pending',
+            created_at: new Date().toISOString()
+        };
+        saveOrder(order);
         console.log(`✅ Zamówienie: ${orderUuid} | ${customer.fullName} | ${(amountGrosze/100).toFixed(2)} zł`);
 
-        // TRYB TESTOWY — bez P24
         if (TEST_MODE) {
-            db.prepare(`UPDATE orders SET status='paid_test', paid_at=CURRENT_TIMESTAMP WHERE order_uuid=?`).run(orderUuid);
-            if (mailer) await sendOwnerEmail({ order_uuid:orderUuid, customer_name:customer.fullName,
-                customer_email:customer.email, customer_phone:customer.phone,
-                customer_address:customer.address, customer_notes:customer.notes||'',
-                cart_json:JSON.stringify(cart), total_amount:amountGrosze }, 'TEST');
-            const returnUrl = SITE_URL
-                ? `${SITE_URL}/thank-you.html?session=${encodeURIComponent(sessionId)}`
-                : `/thank-you.html?session=${encodeURIComponent(sessionId)}`;
+            order.status = 'paid_test';
+            await sendEmails(order, 'TEST');
+            const returnUrl = `https://konfiguratorpolki.github.io/nowyprojekt3/thank-you.html?session=${encodeURIComponent(sessionId)}`;
             return res.json({ redirectUrl: returnUrl });
         }
 
-        // TRYB PRODUKCYJNY — z P24
         const returnUrl = `${SITE_URL}/thank-you.html?session=${encodeURIComponent(sessionId)}`;
         const p24Payload = {
             merchantId: P24_MERCHANT, posId: P24_POS_ID,
             sessionId, amount: amountGrosze, currency: 'PLN',
-            description: `Zamówienie półki ${sessionId.slice(0,20)}`,
+            description: `Zamówienie półki`,
             email: customer.email, client: customer.fullName,
             phone: customer.phone, address: customer.address,
             zip:'', city:'', country:'PL', language:'pl',
             urlReturn: returnUrl,
-            urlStatus: `${process.env.BACKEND_URL || ''}/api/p24-notify`,
+            urlStatus: `${process.env.BACKEND_URL||''}/api/p24-notify`,
             timeLimit: 30, encoding: 'UTF-8', methodId: 150,
         };
         p24Payload.sign = p24Sign({ sessionId, merchantId:P24_MERCHANT, amount:amountGrosze, currency:'PLN', crc:P24_API_KEY });
 
         const p24Res = await fetch(`${P24_BASE}/api/v1/transaction/register`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Basic ' + Buffer.from(`${P24_POS_ID}:${P24_SECRET}`).toString('base64'),
-            },
+            headers: { 'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + Buffer.from(`${P24_POS_ID}:${P24_SECRET}`).toString('base64') },
             body: JSON.stringify(p24Payload),
         });
         const p24Data = await p24Res.json();
-
         if (!p24Res.ok || p24Data.error || !p24Data.data?.token) {
-            console.error('❌ P24 error:', JSON.stringify(p24Data));
-            return res.status(502).json({ error: 'Błąd bramki płatności. Sprawdź dane P24.' });
+            console.error('❌ P24:', JSON.stringify(p24Data));
+            return res.status(502).json({ error: 'Błąd bramki płatności.' });
         }
-
         return res.json({ redirectUrl: `${P24_BASE}/trnRequest/${p24Data.data.token}` });
 
     } catch (err) {
-        console.error('❌ Error:', err.message);
+        console.error('❌', err.message);
         return res.status(500).json({ error: 'Błąd serwera: ' + err.message });
     }
 });
 
-// ─── IPN OD P24 ───────────────────────────────────────────────────────────────
+// IPN
 app.post('/api/p24-notify', async (req, res) => {
     try {
         const { sessionId, amount, currency, orderId, sign } = req.body;
         if (sign !== p24Sign({ sessionId, orderId, amount, currency, crc: P24_API_KEY }))
             return res.status(400).send('Invalid signature');
-
         const verifyPayload = { merchantId:P24_MERCHANT, posId:P24_POS_ID, sessionId, amount, currency, orderId };
         verifyPayload.sign = p24Sign({ sessionId, orderId, amount, currency, crc: P24_API_KEY });
-
         const vRes = await fetch(`${P24_BASE}/api/v1/transaction/verify`, {
             method: 'PUT',
             headers: { 'Content-Type':'application/json',
@@ -171,52 +211,90 @@ app.post('/api/p24-notify', async (req, res) => {
             body: JSON.stringify(verifyPayload),
         });
         if (!vRes.ok) return res.status(400).send('Verification failed');
-
-        const order = db.prepare('SELECT * FROM orders WHERE p24_session_id=?').get(sessionId);
+        const orders = loadOrders();
+        const order = orders.find(o => o.p24_session_id === sessionId);
         if (!order) return res.status(404).send('Not found');
-
-        db.prepare(`UPDATE orders SET status='paid', p24_order_id=?, paid_at=CURRENT_TIMESTAMP WHERE p24_session_id=?`)
-          .run(String(orderId), sessionId);
-
-        if (mailer) { await sendOwnerEmail(order, orderId); await sendCustomerEmail(order); }
+        order.status = 'paid';
+        order.p24_order_id = String(orderId);
+        order.paid_at = new Date().toISOString();
+        fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2));
+        await sendEmails(order, orderId);
         return res.status(200).send('OK');
     } catch(e) { return res.status(500).send('Error'); }
 });
 
-// ─── EMAILE ───────────────────────────────────────────────────────────────────
-async function sendOwnerEmail(order, p24Id='?') {
+// Wysyłka emaili przez Resend API
+async function sendEmails(order, p24Id='TEST') {
+    if (!RESEND_KEY) { console.log('⚠️ Brak RESEND_API_KEY — email pominięty'); return; }
     const cart  = JSON.parse(order.cart_json || '[]');
     const total = ((order.total_amount||0)/100).toFixed(2);
-    const items = cart.map((i,n)=>`${n+1}. ${i.name} x${i.quantity} | ${i.summary} | ${i.sideColor}/${i.shelfColor} | ${(i.price*i.quantity).toFixed(2)} zł`).join('\n');
-    await mailer.sendMail({
-        from: process.env.MAIL_FROM || process.env.SMTP_USER,
-        to:   process.env.MAIL_TO   || process.env.SMTP_USER,
-        subject: `🛒 Nowe zamówienie #${order.order_uuid.slice(0,8)} — ${total} zł`,
-        html: `<h2>🛒 Nowe zamówienie!</h2>
-               <p><b>Klient:</b> ${order.customer_name}<br><b>Email:</b> ${order.customer_email}<br>
-               <b>Telefon:</b> ${order.customer_phone}<br><b>Adres:</b> ${order.customer_address}<br>
-               <b>Uwagi:</b> ${order.customer_notes||'-'}</p>
-               <pre style="background:#f3f4f6;padding:12px;border-radius:6px">${items}</pre>
-               <p><b>Łącznie: ${total} zł</b> | P24: ${p24Id}</p>`
-    });
-}
-async function sendCustomerEmail(order) {
-    const total = ((order.total_amount||0)/100).toFixed(2);
-    await mailer.sendMail({
-        from: process.env.MAIL_FROM || process.env.SMTP_USER,
-        to:   order.customer_email,
-        subject: `Potwierdzenie zamówienia #${order.order_uuid.slice(0,8)}`,
-        html: `<h2 style="color:green">Dziękujemy! 🎉</h2>
-               <p>Cześć <b>${order.customer_name}</b>, przyjęliśmy Twoje zamówienie.</p>
-               <p>Realizacja: <b>3–5 dni roboczych</b><br>Kwota: <b>${total} zł</b><br>
-               Adres: ${order.customer_address}</p>`
-    });
+
+    // Buduj HTML z obrazkami półek
+    const itemsHtml = cart.map((i,n) => {
+        const img = i.snapshot ? `<img src="${i.snapshot}" style="width:120px;height:120px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;" />` : '';
+        return `<tr>
+            <td style="padding:12px;vertical-align:middle">${img}</td>
+            <td style="padding:12px;vertical-align:middle">
+                <b>${i.name}</b> x${i.quantity}<br>
+                <small style="color:#6b7280">${i.summary || ''}</small><br>
+                <small style="color:#6b7280">Boki: ${i.sideColor || '-'} | Półki: ${i.shelfColor || '-'}</small>
+            </td>
+            <td style="padding:12px;vertical-align:middle;text-align:right"><b>${(i.price*i.quantity).toFixed(2)} zł</b></td>
+        </tr>`;
+    }).join('');
+
+    // Email do właściciela
+    try {
+        const r = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from: 'Konfigurator Półek <onboarding@resend.dev>',
+                to: [MAIL_TO || order.customer_email],
+                subject: `🛒 Nowe zamówienie #${order.order_uuid.slice(0,8)} — ${total} zł`,
+                html: `<div style="font-family:sans-serif;max-width:600px">
+                       <h2 style="color:#16a34a">🛒 Nowe zamówienie!</h2>
+                       <p><b>Klient:</b> ${order.customer_name}<br>
+                       <b>Email:</b> ${order.customer_email}<br>
+                       <b>Telefon:</b> ${order.customer_phone}<br>
+                       <b>Adres:</b> ${order.customer_address}<br>
+                       <b>Uwagi:</b> ${order.customer_notes||'-'}</p>
+                       <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px">
+                       ${itemsHtml}
+                       <tr style="background:#f9fafb">
+                           <td colspan="2" style="padding:12px;text-align:right"><b>Łącznie:</b></td>
+                           <td style="padding:12px;text-align:right"><b style="color:#16a34a;font-size:18px">${total} zł</b></td>
+                       </tr>
+                       </table></div>`
+            })
+        });
+        const data = await r.json();
+        if (r.ok) console.log('📧 Email do właściciela wysłany:', data.id);
+        else console.log('❌ Email błąd:', JSON.stringify(data));
+    } catch(e) { console.log('❌ Email wyjątek:', e.message); }
+
+    // Email do klienta
+    try {
+        await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                from: 'Konfigurator Półek <onboarding@resend.dev>',
+                to: [order.customer_email],
+                subject: `Potwierdzenie zamówienia #${order.order_uuid.slice(0,8)}`,
+                html: `<h2 style="color:green">Dziękujemy! 🎉</h2>
+                       <p>Cześć <b>${order.customer_name}</b>,<br>
+                       Realizacja: <b>3–5 dni roboczych</b><br>
+                       Kwota: <b>${total} zł</b><br>
+                       Adres: ${order.customer_address}</p>`
+            })
+        });
+        console.log('📧 Email do klienta wysłany');
+    } catch(e) { console.log('❌ Email klient wyjątek:', e.message); }
 }
 
-// ─── START ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`\n✅ Backend działa na porcie ${PORT}`);
-    console.log(`   Tryb: ${TEST_MODE ? '⚠️  TESTOWY (brak P24)' : '✅ PRODUKCJA'}`);
-    console.log(`   SITE_URL: ${SITE_URL || '(nie ustawiony)'}\n`);
+    console.log(`✅ Backend port ${PORT} | Tryb: ${TEST_MODE ? 'TESTOWY' : 'PRODUKCJA'}`);
+    console.log(`📋 Panel zamówień: /zamowienia?pass=${ADMIN_PASS}`);
 });
