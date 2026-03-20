@@ -1656,14 +1656,14 @@ body.no-scroll {
     }
     .cart-item-card:hover { border-color: #e5e7eb; }
     .cart-item-thumb {
-        width: 68px; height: 68px;
-        flex-shrink: 0;
-        border-radius: 10px;
-        background: #f9fafb;
-        border: 1px solid #f3f4f6;
-        overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-    }
+    width: 110px;
+    height: 130px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f5f5f4;
+    flex-shrink: 0;
+    border: 1px solid #e5e7eb;
+}
     .cart-item-thumb img { width: 100%; height: 100%; object-fit: contain; }
     .cart-item-body { flex: 1; min-width: 0; }
     .cart-item-name {
@@ -2952,7 +2952,7 @@ Zadaj pytanie", wklejając kod w wiadomości.</span></li>
                 <!-- Opcje / materiał -->
                 <li class="param-row param-section-start full-width-row"><span class="param-label">Opcje</span><span id="extraOptionsSummary" class="param-value">standardowa</span></li>
                 <li class="param-row full-width-row"><span class="param-label">Materiał</span><span class="param-value">płyta laminowana gr. 1,8 cm</span></li>
-                <li class="param-row full-width-row"><span class="param-label">Realizacja</span><span class="param-value">3–5 dni roboczych</span></li>
+                <li class="param-row full-width-row"><span class="param-label">Realizacja</span><span class="param-value">3–7 dni roboczych</span></li>
 
             </ul>
             </div>
@@ -3486,7 +3486,7 @@ function updateDividerIconsVisibility() { if (!shelfContainer || !shelfTypeSelec
         function updateDepthOptions() { const width = getCurrentWidth(); const height = heightSelect.value; const currentDepth = depthSelect.value; let availableDepths = ['10']; const widthValue = widthSelect.value; let allow15 = false; if (isNaN(width) || !height || height === "") { depthSelect.innerHTML = '<option value="">-- Wybierz --</option>'; depthSelect.value = ""; return; } if (widthValue === "custom") { const customWidth = width; const standardWidthKey = customWidth < 39 ? "34" : customWidth < 47 ? "44" : customWidth < 54 ? "50" : "60"; if (pricing[standardWidthKey]?.[height]?.['15'] && Object.keys(pricing[standardWidthKey]?.[height]?.['15']).length > 0) { allow15 = true; } } else { const standardWidthKey = String(width); if (pricing[standardWidthKey]?.[height]?.['15'] && Object.keys(pricing[standardWidthKey]?.[height]?.['15']).length > 0) { allow15 = true; } } if (allow15) availableDepths.push('15'); depthSelect.innerHTML = '<option value="">-- Wybierz --</option>'; availableDepths.forEach(depth => { const option = document.createElement('option'); option.value = depth; option.textContent = `${depth} cm`; depthSelect.appendChild(option); }); if (availableDepths.includes(currentDepth)) { depthSelect.value = currentDepth; } else { depthSelect.value = ""; } }
         function updateShelfCountOptions() { const height = heightSelect.value; const shelfType = shelfTypeSelect.value; const currentValue = shelfCountSelect.value; let options = { '0': 'brak półek' }; if (!height || height === "" || shelfType === 'mug_shelf' || shelfType === 'modular') { shelfCountSelect.innerHTML = ''; if (!height || height === "") { const option = document.createElement('option'); option.value = '0'; option.textContent = 'brak półek'; shelfCountSelect.appendChild(option); shelfCountSelect.value = '0'; } return; } if (height === "40") options['2'] = '2 półki'; else if (height === "60") { options['2'] = '2 półki'; options['3'] = '3 półki'; } else if (height === "80") { options['2'] = '2 półki'; options['3'] = '3 półki'; options['4'] = '4 półki'; options['5'] = '5 półki'; } shelfCountSelect.innerHTML = ''; for (const value in options) { const option = document.createElement('option'); option.value = value; option.textContent = options[value]; shelfCountSelect.appendChild(option); } if (options.hasOwnProperty(currentValue)) { shelfCountSelect.value = currentValue; } else { shelfCountSelect.value = '0'; } if (typeof showOrHideCustomShelfToggle === 'function') showOrHideCustomShelfToggle(); }
         function checkCustomWidth() { const isCustom = widthSelect.value === 'custom'; if(customWidthInput && customWidthDisplay && customWidthFee) { customWidthInput.style.display = isCustom ? 'block' : 'none'; customWidthDisplay.style.display = isCustom ? 'inline' : 'none'; customWidthFee.style.display = isCustom ? 'inline' : 'none'; if (isCustom) { customWidthDisplay.textContent = customWidthInput.value + ' cm'; } } handleDimensionChange(); }
-        function handleDimensionChange() { if (shelfTypeSelect.value !== 'mug_shelf') { updateDepthOptions(); updateShelfCountOptions(); } if (typeof showOrHideCustomShelfToggle === 'function') showOrHideCustomShelfToggle(); updatePreview(); updateOrderSummary(); }
+        function handleDimensionChange() { if (shelfTypeSelect.value !== 'mug_shelf') { updateDepthOptions(); updateShelfCountOptions(); } if (typeof showOrHideCustomShelfToggle === 'function') showOrHideCustomShelfToggle(); if (typeof customShelfPositionEnabled !== 'undefined' && customShelfPositionEnabled) { disableCustomPositions(); } updatePreview(); updateOrderSummary(); }
         function handleMugShelfHeightChange(isLoading = false) { const height = heightSelect.value; if (shelfCountSelect && mugShelfDividersOptionsDiv) { if (height === '60') { shelfCountSelect.innerHTML = '<option value="3">3 półki (stałe)</option>'; shelfCountSelect.value = '3'; mugShelfDividersOptionsDiv.style.display = 'block'; } else if (height === '40') { shelfCountSelect.innerHTML = '<option value="2">2 półki (stałe)</option>'; shelfCountSelect.value = '2'; mugShelfDividersOptionsDiv.style.display = 'block'; } else { shelfCountSelect.innerHTML = '<option value="">-- Wybierz --</option>'; shelfCountSelect.value = ''; mugShelfDividersOptionsDiv.style.display = 'none'; } if (!isLoading) { if(dividersTopCheckbox) dividersTopCheckbox.checked = false; if(dividersMiddleCheckbox) dividersMiddleCheckbox.checked = false; if(dividersBottomCheckbox) dividersBottomCheckbox.checked = false; } } if (!isLoading) { updatePreview(); updateOrderSummary(); } }
         
       function handleShelfTypeChange(isLoading = false) {
@@ -3701,13 +3701,22 @@ function updateModularIconActiveStates() {
         controls.minPolarAngle = _lockedPolar;
         controls.maxPolarAngle = _lockedPolar; if (controls) { controls.addEventListener('start', () => { autoRotateEnabled = false; }); controls.addEventListener('end', () => { /* nie wznawiaj obrotu po kliknięciu */ }); } window.addEventListener('resize', onWindowResize, false); updatePreview(true); animate(); }
         function onWindowResize() { const container = threeJsCanvasWrapper; if (!camera || !renderer || !container) return; camera.clearViewOffset(); if (renderer && renderer.domElement) renderer.domElement.style.transform = ''; shiftCanvasForHeight(); const width = container.clientWidth; const height = container.clientHeight; if (width > 0 && height > 0) { camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); } else { console.warn("Skipping resize for 3D canvas wrapper with zero dimensions."); } updateDividerIconsVisibility(); updateModularIconsVisibility(); }
+        let _lastFrameDataUrl = null;
+        let _lastFrameCounter = 0;
         function animate() {
             requestAnimationFrame(animate);
             if (autoRotateEnabled && shelfGroup) {
                 shelfGroup.rotation.y -= 0.003; // ZMIANA: Zmniejszona wartość dla wolniejszego obrotu
             }
             if(controls) controls.update();
-            if(renderer && scene && camera) renderer.render(scene, camera);
+            if(renderer && scene && camera) {
+                renderer.render(scene, camera);
+                // Co 30 klatek zapisz obraz (dla snapshotu koszyka)
+                _lastFrameCounter++;
+                if (_lastFrameCounter % 30 === 0) {
+                    try { _lastFrameDataUrl = renderer.domElement.toDataURL('image/png'); } catch(e) {}
+                }
+            }
         }
         
         function clearScene() {
@@ -4556,7 +4565,6 @@ function fitCameraToShelf() {
         function buildShelfModel(config) { const group = new THREE.Group(); const { width: widthNum, height: heightVal, depth: depthVal, shelfCount: shelfCountVal, shelfType, noTopShelf, noBottomShelf, addDividersTop, addDividersMiddle, addDividersBottom } = config; if (!widthNum || !heightVal || !depthVal || shelfCountVal === undefined) return group; const defaultMaterial = new THREE.MeshStandardMaterial(originalPreviewMaterialParams); const mkMat = () => defaultMaterial.clone(); const thickness = 0.18; const width = widthNum / 10; const height = parseFloat(heightVal) / 10; const depth = parseFloat(depthVal) / 10; const shelfCount = parseInt(shelfCountVal); if (isNaN(width) || isNaN(height) || isNaN(depth) || width <= 0 || height <= 0 || depth <= 0) return group; let topPanel, bottomPanel; if (!noBottomShelf) { const bottomGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); bottomPanel = new THREE.Mesh(bottomGeometry, mkMat()); bottomPanel.position.set(0, -height / 2 + thickness / 2, 0); bottomPanel.name = "bottomPanel"; group.add(bottomPanel); } if (!noTopShelf) { const topGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); topPanel = new THREE.Mesh(topGeometry, mkMat()); topPanel.position.set(0, height / 2 - thickness / 2, 0); topPanel.name = "topPanel"; group.add(topPanel); } const sideGeometry = new THREE.BoxGeometry(thickness, height, depth); const leftSideMesh = new THREE.Mesh(sideGeometry, mkMat()); leftSideMesh.position.set(-width / 2 + thickness / 2, 0, 0); leftSideMesh.name = "leftSide"; group.add(leftSideMesh); const rightSideMesh = new THREE.Mesh(sideGeometry, mkMat()); rightSideMesh.position.set(width / 2 - thickness / 2, 0, 0); rightSideMesh.name = "rightSide"; group.add(rightSideMesh); const internalShelves = []; if (!isNaN(shelfCount) && shelfCount > 0) { if (shelfType === 'mug_shelf' && heightVal === '60' && shelfCount === 3 && topPanel) { const fixedGap = 1.09; const topPanelBottomY = topPanel.position.y - thickness / 2; let lastShelfY = topPanelBottomY; for (let i = 0; i < shelfCount; i++) { const shelfY = lastShelfY - fixedGap - thickness / 2; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); lastShelfY = shelfY - thickness / 2; } } else { const topExists = !!topPanel; const bottomExists = !!bottomPanel; const topThicknessActual = topExists ? thickness : 0; const bottomThicknessActual = bottomExists ? thickness : 0; const totalAvailableHeight = height - topThicknessActual - bottomThicknessActual; if (totalAvailableHeight >= shelfCount * thickness && (shelfCount + 1) > 0) { const useCustom = config.customPositions && config.customPositions.length === shelfCount; if (useCustom) { const bottomY = -height / 2 + thickness; for (let i = 0; i < shelfCount; i++) { const posFromBottom = config.customPositions[i] / 10; const shelfY = bottomY + posFromBottom; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } else { const gap = (totalAvailableHeight - shelfCount * thickness) / (shelfCount + 1); let startY = bottomExists ? (-height / 2 + bottomThicknessActual) : (-height / 2); for (let i = 1; i <= shelfCount; i++) { const shelfY = startY + i * gap + (i - 0.5) * thickness; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i-1}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } } } } if (config.customPositions && internalShelves.length > 0) { if (typeof addShelfDimensionArrows === 'function') addShelfDimensionArrows(group, internalShelves, bottomPanel, topPanel, thickness, width, height, depth); } if (shelfType === 'mug_shelf' && topPanel && bottomPanel && internalShelves.length > 0) { if (addDividersTop || addDividersMiddle || addDividersBottom) { const innerWidthForDividers = width - 2 * thickness; const dividerThicknessThreeJs = thickness; let levels = []; internalShelves.sort((a, b) => a.position.y - b.position.y); if (heightVal === '60' && internalShelves.length === 3) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[2].position.y + thickness/2 }, { top: internalShelves[2].position.y - thickness/2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } else if (heightVal === '40' && internalShelves.length === 2) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } const drawDividersForLevel = (levelData) => { const levelH = Math.max(0.01, levelData.top - levelData.bottom); if (levelH <= 0.01) return; const yCenter = levelData.bottom + levelH / 2; const dividerGeometry = new THREE.BoxGeometry(dividerThicknessThreeJs, levelH, depth); if (widthNum == 84) { const numPhysicalDividers = 3; const singleCompartmentWidth = 1.25; let currentXPos = -innerWidthForDividers / 2; for (let i = 0; i < numPhysicalDividers; i++) { currentXPos += singleCompartmentWidth; const dividerXCenter = currentXPos + (dividerThicknessThreeJs / 2); const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(dividerXCenter, yCenter, 0); dividerMesh.name = `divider_h84_${i}`; group.add(dividerMesh); currentXPos += dividerThicknessThreeJs; } } else { const numDividersOriginal = (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0); if (numDividersOriginal > 0) { const dividerSpacing = innerWidthForDividers / (numDividersOriginal + 1); for (let i = 1; i <= numDividersOriginal; i++) { const xPos = (-innerWidthForDividers / 2) + i * dividerSpacing; const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(xPos, yCenter, 0); dividerMesh.name = `divider_${i}`; group.add(dividerMesh); } } } }; if (addDividersTop && levels[0]) drawDividersForLevel(levels[0]); if (addDividersMiddle && levels[1]) drawDividersForLevel(levels[1]); if (addDividersBottom && levels[2]) drawDividersForLevel(levels[2]); } } return group; }
         function generate3dSnapshotFromCurrentModel() {
             return new Promise((resolve, reject) => {
-                // Build a fresh static model instead of cloning animated one
                 const shelfType = shelfTypeSelect ? shelfTypeSelect.value : '';
                 let freshConfig;
                 if (shelfType === 'modular') {
@@ -4566,8 +4574,8 @@ function fitCameraToShelf() {
                 }
 
                 let freshGroup;
-                if (shelfType === 'modular' && typeof buildModularShelfModel === 'function') {
-                    freshGroup = buildModularShelfModel(freshConfig);
+                if (shelfType === 'modular' && typeof buildModularShelf === 'function') {
+                    freshGroup = buildModularShelf(freshConfig);
                 } else {
                     freshGroup = buildShelfModel(freshConfig);
                 }
@@ -4580,7 +4588,7 @@ function fitCameraToShelf() {
                 const snapshotScene = new THREE.Scene();
                 snapshotScene.background = new THREE.Color(0xf5f5f4);
                 const snapshotCamera = new THREE.PerspectiveCamera(30, 1, 0.1, 1000);
-        
+
                 snapshotScene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
                 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
                 dirLight.position.set(5, 10, 7.5);
@@ -4588,44 +4596,37 @@ function fitCameraToShelf() {
 
                 freshGroup.rotation.set(0, 0, 0);
                 freshGroup.scale.set(1, 1, 1);
-        
+
                 const box = new THREE.Box3().setFromObject(freshGroup);
                 const center = box.getCenter(new THREE.Vector3());
                 const size = box.getSize(new THREE.Vector3());
                 freshGroup.position.sub(center);
                 snapshotScene.add(freshGroup);
 
-                // Użyj kamery ortogonalnej — idealnie dopasowuje się do modelu bez ucięć
-                const margin = 1.25; // 25% marginesu dookoła
-                const halfW = (size.x / 2) * margin;
-                const halfH = (size.y / 2) * margin;
-                const aspectW = 512;
-                const aspectH = Math.round(aspectW * (halfH / halfW));
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = snapshotCamera.fov * (Math.PI / 180);
+                let distance = maxDim / (2 * Math.tan(fov / 2));
+                distance *= 1.35;
+                const finalDistance = Math.max(distance, 8.0);
 
-                const orthoCamera = new THREE.OrthographicCamera(
-                    -halfW, halfW, halfH, -halfH, 0.1, 1000
-                );
-                // Ustaw kąt widzenia — lekko z boku i z góry
-                orthoCamera.position.set(size.x * 0.4, 0, size.z * 5);
-                orthoCamera.lookAt(0, 0, 0);
+                const viewVector = new THREE.Vector3(-7, 1.5, 6).normalize();
+                snapshotCamera.position.copy(viewVector).multiplyScalar(finalDistance);
+                snapshotCamera.lookAt(0, 0, 0);
 
                 const snapshotRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
                 snapshotRenderer.setPixelRatio(window.devicePixelRatio);
-                snapshotRenderer.setSize(aspectW, aspectH);
-        
+                snapshotRenderer.setSize(512, 512);
+
                 setTimeout(() => {
                     try {
-                        snapshotRenderer.render(snapshotScene, orthoCamera);
+                        snapshotRenderer.render(snapshotScene, snapshotCamera);
                         const dataUrl = snapshotRenderer.domElement.toDataURL('image/png');
                         snapshotScene.traverse(object => {
                             if (!object.isMesh) return;
                             if (object.geometry) object.geometry.dispose();
                             if (object.material) {
-                                if (Array.isArray(object.material)) {
-                                    object.material.forEach(material => material.dispose());
-                                } else {
-                                    object.material.dispose();
-                                }
+                                if (Array.isArray(object.material)) { object.material.forEach(m => m.dispose()); }
+                                else { object.material.dispose(); }
                             }
                         });
                         snapshotRenderer.dispose();
@@ -4637,6 +4638,7 @@ function fitCameraToShelf() {
                 }, 50);
             });
         }
+
         function reset3DView() { if (controls && camera) { controls.reset(); const _isMob = window.innerWidth < 768; const _hh = parseInt(heightSelect && heightSelect.value) || 60; const _t = (_isMob && _hh >= 80) ? -3.2 : (_isMob && _hh >= 60) ? -2.5 : -2.0; camera.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z); controls.target.set(0, _t, 0); controls.update(); setActiveMobileIcon(null); if (shelfTypeSelect && shelfTypeSelect.value !== 'mug_shelf' && shelfTypeSelect.value !== 'modular') { autoRotateEnabled = false; } } }
         function computePriceDetailed() {
             const shelfType = shelfTypeSelect.value;
@@ -5568,6 +5570,28 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
         }
 
 
+
+        // Mapa kolor → plik próbki
+        const colorSwatchMap = {
+            '#8B5A2B': 'img/dabduze.jpg',
+            '#FFFFFF':  'img/bialyduze.jpg',
+            '#000000':  'img/czarnyduze.jpg',
+        };
+
+        // Załaduj próbkę jako Image (z cache)
+        const _swatchCache = {};
+        async function loadSwatch(hex) {
+            const src = colorSwatchMap[hex ? hex.toUpperCase() : ''] || colorSwatchMap[hex] || null;
+            if (!src) return null;
+            if (_swatchCache[src]) return _swatchCache[src];
+            try {
+                const resp = await fetch(src);
+                const blob = await resp.blob();
+                const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+                return await new Promise(res => { const img = new Image(); img.onload = () => { _swatchCache[src] = img; res(img); }; img.onerror = () => res(null); img.src = b64; });
+            } catch(e) { return null; }
+        }
+
         async function generateAllegroJPG(details, snapshotDataUrl, priceDetails) {
             // Format B: render lewy 65% + bialy panel prawy 35% — wersja Allegro
             const W = 1400, H = 1000;
@@ -5656,14 +5680,20 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
             const disc = priceDetails ? (priceDetails.total * 0.90).toFixed(2) : null;
             const orig = priceDetails ? priceDetails.total.toFixed(2) : null;
 
+            // Montaż — z kodu półki
+            const mountText = (details.shelfType||'').toLowerCase().includes('wisz') ? 'Wisząca' :
+                              (details.shelfType||'').toLowerCase().includes('stoj') ? 'Stojąca na blacie' : details.shelfType || '—';
+
             const px = RENDER_W + PAD;
             const maxTextW = PANEL_W - PAD * 2;
 
             // Ile miejsca na parametry vs cena na dole
             const PRICE_H = disc ? 120 : 0;
-            const CODE_H = 36;
+            const CODE_H = 72; // więcej miejsca na kod i montaż
             const PARAMS_H = H - PAD - PRICE_H - CODE_H - PAD;
             const paramRowH = Math.floor(PARAMS_H / paramList.length);
+
+            // Próbki rysowane bezpośrednio
 
             paramList.forEach(([label, value], i) => {
                 const py = PAD + i * paramRowH;
@@ -5679,11 +5709,31 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                 ctx.font = '600 14px Arial, sans-serif';
                 ctx.fillText(label, px, py + 18);
 
-                // Wartosc — duza czarna, auto-shrink
+                // Próbka koloru dla wierszy kolorów
+                const isColorRow = label === 'KOLOR BOKOW' || label === 'KOLOR POLEK';
+                const swatchSize = 80;
+                const swatchX = px + maxTextW - swatchSize;
+                const swatchY = py + 26;
+
+                if (isColorRow) {
+                    const swatchHex = label === 'KOLOR BOKOW' ? (details.sideColorValue || '#888') : (details.shelfColorValue || '#888');
+                    const swH = (swatchHex||'').toUpperCase();
+                    const swImg2 = _preloadedSwatches ? (_preloadedSwatches[swH]||_preloadedSwatches[swatchHex]) : null;
+                    ctx.save();
+                    ctx.beginPath(); ctx.roundRect(swatchX, swatchY, swatchSize, swatchSize, 5); ctx.clip();
+                    if (swImg2) { ctx.drawImage(swImg2, swatchX, swatchY, swatchSize, swatchSize); }
+                    else { ctx.fillStyle = swatchHex||'#888'; ctx.fillRect(swatchX, swatchY, swatchSize, swatchSize); }
+                    ctx.restore();
+                    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.roundRect(swatchX, swatchY, swatchSize, swatchSize, 5); ctx.stroke();
+                }
+
+                // Wartosc — duza czarna, auto-shrink (zostaw miejsce na próbkę)
                 ctx.fillStyle = '#111111';
                 let fs = 26;
+                const maxW = isColorRow ? maxTextW - swatchSize - 10 : maxTextW;
                 ctx.font = 'bold '+fs+'px Arial, sans-serif';
-                while (ctx.measureText(value||'—').width > maxTextW && fs > 14) {
+                while (ctx.measureText(value||'—').width > maxW && fs > 14) {
                     fs--;
                     ctx.font = 'bold '+fs+'px Arial, sans-serif';
                 }
@@ -5713,12 +5763,26 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                 ctx.fillText(disc+' zl', px, priceY + 96);
             }
 
-            // === KOD na samym dole ===
-            const codeY = H - 14;
-            ctx.fillStyle = '#cccccc'; ctx.font = '500 13px Arial, sans-serif';
-            ctx.fillText('Kod: ', px, codeY);
-            ctx.fillStyle = '#888888'; ctx.font = '500 13px "Courier New", monospace';
-            ctx.fillText(code, px + ctx.measureText('Kod: ').width + 2, codeY);
+            // === KOD + MONTAZ na samym dole ===
+            const bottomY = H - CODE_H + 8;
+
+            // Separator
+            ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(px, bottomY - 4); ctx.lineTo(px + maxTextW, bottomY - 4); ctx.stroke();
+
+            // Montaż
+            ctx.fillStyle = '#aaaaaa'; ctx.font = '600 12px Arial, sans-serif';
+            ctx.fillText('MONTAŻ', px, bottomY + 12);
+            ctx.fillStyle = '#111111'; ctx.font = 'bold 18px Arial, sans-serif';
+            ctx.fillText(mountText, px, bottomY + 34);
+
+            // Kod konfiguracyjny
+            ctx.fillStyle = '#aaaaaa'; ctx.font = '600 12px Arial, sans-serif';
+            ctx.fillText('KOD KONFIGURACYJNY', px, bottomY + 52);
+            ctx.fillStyle = '#16a34a'; ctx.font = 'bold 13px "Courier New", monospace';
+            let displayCode = code;
+            while (ctx.measureText(displayCode).width > maxTextW && displayCode.length > 8) displayCode = displayCode.slice(0,-2)+'…';
+            ctx.fillText(displayCode, px, bottomY + 68);
 
             canvas.toBlob(blob => {
                 const url = URL.createObjectURL(blob);
@@ -6461,7 +6525,18 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                     });
                 }
                 const detailsPanel = document.getElementById('materialSamplesDetails'); if (detailsPanel) { detailsPanel.addEventListener('toggle', function initMaterialSwiperOnToggle() { if (detailsPanel.open && !materialSwiperInstance) { if (typeof Swiper === 'undefined') { console.error("Swiper library not loaded!"); return; } try { materialSwiperInstance = new Swiper('#materialSwiper', { slidesPerView: 1, spaceBetween: 10, navigation: { nextEl: '.material-swiper-button-next', prevEl: '.material-swiper-button-prev' }, observer: true, observeParents: true }); } catch (swiperError) { console.error("Błąd inicjalizacji Swipera:", swiperError); } } else if (detailsPanel.open && materialSwiperInstance) { materialSwiperInstance.update(); } }); document.addEventListener('click', function(event) { if (detailsPanel.open && !detailsPanel.contains(event.target)) { detailsPanel.open = false; } }); } else { console.warn("Element panelu próbek (#materialSamplesDetails) nie znaleziony."); }
-                const formElementsToMonitor = document.querySelectorAll('#shelfType, #width, #customWidthInput, #height, #depth, #shelfCount, #sideColor, #shelfColor, #moduleWidth, #moduleHeight, #connectingShelfWidth'); formElementsToMonitor.forEach(element => { const eventType = (element.type === 'range') ? 'input' : 'change'; element.addEventListener(eventType, closeDetailsPanelIfNeeded); }); const configPanelContainer = document.querySelector('.w-full.md\\:w-1\\/3.space-y-8'); if (configPanelContainer) { configPanelContainer.addEventListener('change', function(event) { if (event.target.matches('#shelfTypeOptions input[type="checkbox"], #mugShelfSpecificOptionsContainer input[type="checkbox"], #mugShelfSpecificOptionsContainer input[type="radio"]')) { closeDetailsPanelIfNeeded(); } }); } else { document.body.addEventListener('change', function(event) { if (event.target.matches('#noTopShelf, #noBottomShelf, #dividersTop, #dividersMiddle, #dividersBottom, input[name="mugShelfMount"]')) { closeDetailsPanelIfNeeded(); } }); }
+                // Resetuj własne rozmieszczenie przy zmianie ilości półek lub wysokości
+        document.getElementById('shelfCount')?.addEventListener('change', () => {
+            if (typeof customShelfPositionEnabled !== 'undefined' && customShelfPositionEnabled) {
+                disableCustomPositions();
+            }
+        });
+        document.getElementById('height')?.addEventListener('change', () => {
+            if (typeof customShelfPositionEnabled !== 'undefined' && customShelfPositionEnabled) {
+                disableCustomPositions();
+            }
+        });
+        const formElementsToMonitor = document.querySelectorAll('#shelfType, #width, #customWidthInput, #height, #depth, #shelfCount, #sideColor, #shelfColor, #moduleWidth, #moduleHeight, #connectingShelfWidth'); formElementsToMonitor.forEach(element => { const eventType = (element.type === 'range') ? 'input' : 'change'; element.addEventListener(eventType, closeDetailsPanelIfNeeded); }); const configPanelContainer = document.querySelector('.w-full.md\\:w-1\\/3.space-y-8'); if (configPanelContainer) { configPanelContainer.addEventListener('change', function(event) { if (event.target.matches('#shelfTypeOptions input[type="checkbox"], #mugShelfSpecificOptionsContainer input[type="checkbox"], #mugShelfSpecificOptionsContainer input[type="radio"]')) { closeDetailsPanelIfNeeded(); } }); } else { document.body.addEventListener('change', function(event) { if (event.target.matches('#noTopShelf, #noBottomShelf, #dividersTop, #dividersMiddle, #dividersBottom, input[name="mugShelfMount"]')) { closeDetailsPanelIfNeeded(); } }); }
                 
                 // NOWE LISTENERY
                 if (viewOrderCodeInput) { 
@@ -7597,13 +7672,72 @@ async function startCompositeExport() {
     btn.textContent = 'Jedno zdjęcie zbiorcze';
 }
 
+
+const _SWATCH_B64 = {
+    '#FFFFFF': 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBxdWFsaXR5ID0gOTAK/9sAQwAFAwQEBAMFBAQEBQUFBgcMCAcHBwcPCwsJDBEPEhIRDxERExYcFxMUGhURERghGBodHR8fHxMXIiQiHiQcHh8e/9sAQwEFBQUHBgcOCAgOHhQRFB4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4e/8AAEQgAUABQAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A+y6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/9k=',
+    '#000000': 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBxdWFsaXR5ID0gOTAK/9sAQwAFAwQEBAMFBAQEBQUFBgcMCAcHBwcPCwsJDBEPEhIRDxERExYcFxMUGhURERghGBodHR8fHxMXIiQiHiQcHh8e/9sAQwEFBQUHBgcOCAgOHhQRFB4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4e/8AAEQgAUABQAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A+PKKKK2MQooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD//Z',
+    '#8B5A2B': 'data:image/jpeg;base64,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',
+};
+
+// Cache załadowanych obrazów próbek
+const _swatchImgLoaded = {};
+
+function drawColorSwatch(ctx, hex, x, y, size) {
+    const h = (hex || '').toUpperCase();
+    const src = _SWATCH_B64[h] || _SWATCH_B64[hex] || null;
+
+    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1.5;
+
+    if (src) {
+        let img = _swatchImgLoaded[h];
+        if (img && img.complete && img.naturalWidth > 0) {
+            ctx.save();
+            ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.clip();
+            ctx.drawImage(img, x, y, size, size);
+            ctx.restore();
+        } else if (!img) {
+            // Załaduj i przerysuj
+            img = new Image();
+            img.onload = () => { _swatchImgLoaded[h] = img; };
+            img.src = src;
+            _swatchImgLoaded[h] = img;
+            // Fallback na kolor
+            ctx.fillStyle = hex || '#888'; ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.fill();
+        } else {
+            ctx.fillStyle = hex || '#888'; ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.fill();
+        }
+    } else {
+        ctx.fillStyle = hex || '#888888';
+        ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.fill();
+    }
+    ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.stroke();
+}
+
+async function drawColorSwatchAsync(ctx, hex, x, y, size) {
+    const h = (hex || '').toUpperCase();
+    const src = _SWATCH_B64[h] || _SWATCH_B64[hex] || null;
+    if (src) {
+        const img = await new Promise(res => {
+            const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src;
+        });
+        if (img) {
+            ctx.save();
+            ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.clip();
+            ctx.drawImage(img, x, y, size, size);
+            ctx.restore();
+        } else { ctx.fillStyle = hex||'#888'; ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.fill(); }
+    } else { ctx.fillStyle = hex||'#888'; ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.fill(); }
+    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(x, y, size, size, 4); ctx.stroke();
+}
+
 async function generateCompositeImage(shelves) {
     const N = shelves.length;
-    const SHELF_W = 560;   // szerokosc komórki z polka
-    const SHELF_H = 640;   // wysokosc renderu
-    const INFO_H = 200;    // wysokosc sekcji parametrow pod renderem
-    const PAD = 24;
-    const PRICE_BAR_H = 130;
+    const SHELF_W = 580;   // szerokosc komórki z polka
+    const SHELF_H = 780;   // wysokosc renderu — większe 3D
+    const INFO_H = 260;    // kompaktowa sekcja parametrów
+    const PAD = 16;
+    const PRICE_BAR_H = 110;
     const W = N * SHELF_W + (N+1) * PAD;
     const H = SHELF_H + INFO_H + PRICE_BAR_H + PAD * 2;
 
@@ -7618,6 +7752,18 @@ async function generateCompositeImage(shelves) {
     // Zaladuj obrazy
     const imgs = await Promise.all(shelves.map(s => new Promise((res, rej) => {
         const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = s.snap;
+    })));
+
+    // Preload próbki z base64 (brak CORS dla data URI)
+    const _swatchColors = ['#8B5A2B','#FFFFFF','#000000'];
+    const _preloadedSwatches = {};
+    await Promise.all(_swatchColors.map(h => new Promise(res => {
+        const src = _SWATCH_B64[h];
+        if (!src) return res();
+        const img = new Image();
+        img.onload = () => { _preloadedSwatches[h] = img; res(); };
+        img.onerror = () => res();
+        img.src = src;
     })));
 
     // Rysuj kazda polke
@@ -7654,31 +7800,102 @@ async function generateCompositeImage(shelves) {
         const infoItems = [
             ['Rodzaj', d.shelfType],
             ['Wymiary', (d.width||d.totalWidth||'')+'×'+(d.height||'')+'×'+(d.depth||'')+' cm'],
-            ['Kolor boków', d.sideColor],
-            ['Kolor półek', d.shelfColor],
+            ['Kolor boków', d.sideColor, d.sideColorValue],
+            ['Kolor półek', d.shelfColor, d.shelfColorValue],
         ].filter(([,v]) => v && !v.startsWith('undefined'));
+        const mountText2 = (d.shelfType||'').toLowerCase().includes('wisz') ? 'Wisząca' :
+                           (d.shelfType||'').toLowerCase().includes('stoj') ? 'Stojąca na blacie' : d.shelfType || '—';
 
-        const colW2 = (SHELF_W - 16) / 2;
-        infoItems.forEach(([label, value], ii) => {
-            const col = ii % 2, row = Math.floor(ii/2);
-            const ix = x + 12 + col * colW2;
-            const iy = infoY + 18 + row * 72;
-            ctx.fillStyle = '#9ca3af'; ctx.font = '600 11px Arial,sans-serif';
+        const colW2 = (SHELF_W - 28) / 2;
+        const swatchSz = 48;
+        const rowH = 68;
+
+        // 2-column grid: Rodzaj | Wymiary, Kolor boków | Kolor półek
+        infoItems.forEach(([label, value, colorHex], ii) => {
+            const col = ii % 2, row = Math.floor(ii / 2);
+            const ix = x + 14 + col * (colW2 + 14);
+            const iy = infoY + 12 + row * rowH;
+
+            // Label
+            ctx.fillStyle = '#9ca3af'; ctx.font = '500 10px Arial,sans-serif';
             ctx.fillText(label.toUpperCase(), ix, iy);
-            ctx.fillStyle = '#111827'; ctx.font = 'bold 16px Arial,sans-serif';
-            let v = value||'—';
-            ctx.font = 'bold 16px Arial,sans-serif';
-            while (ctx.measureText(v).width > colW2-14 && v.length > 4) v = v.slice(0,-2)+'…';
-            ctx.fillText(v, ix, iy+22);
+
+            if (colorHex) {
+                // Próbka + nazwa obok
+                const h = (colorHex||'').toUpperCase();
+                const swImg = _preloadedSwatches[h] || _preloadedSwatches[colorHex];
+                const sy = iy + 6;
+                ctx.save();
+                ctx.beginPath(); ctx.roundRect(ix, sy, swatchSz, swatchSz, 4); ctx.clip();
+                if (swImg) { ctx.drawImage(swImg, ix, sy, swatchSz, swatchSz); }
+                else { ctx.fillStyle = colorHex||'#888'; ctx.fillRect(ix, sy, swatchSz, swatchSz); }
+                ctx.restore();
+                ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.roundRect(ix, sy, swatchSz, swatchSz, 4); ctx.stroke();
+
+                ctx.fillStyle = '#111827'; ctx.font = '500 15px Arial,sans-serif';
+                let v = value||'—';
+                const maxW = colW2 - swatchSz - 10;
+                while (ctx.measureText(v).width > maxW && v.length > 4) v = v.slice(0,-2)+'…';
+                ctx.fillText(v, ix + swatchSz + 8, iy + 26);
+            } else {
+                ctx.fillStyle = '#111827'; ctx.font = '500 14px Arial,sans-serif';
+                let v = value||'—';
+                while (ctx.measureText(v).width > colW2 - 8 && v.length > 4) v = v.slice(0,-2)+'…';
+                ctx.fillText(v, ix, iy + 20);
+            }
         });
 
-        // Cena indywidualna pod parametrami
-        if (shelf.price) {
-            const basePrice = shelf.price.total.toFixed(2);
-            const priceY = infoY + INFO_H - 28;
-            ctx.fillStyle = '#d1d5db'; ctx.font = '500 13px Arial,sans-serif';
-            ctx.fillText('Cena: ' + basePrice + ' zł', x + 12, priceY);
+        // Separator — po 2 wierszach parametrów
+        const sepY = infoY + 12 + 2 * rowH + 4;
+        ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x + 14, sepY); ctx.lineTo(x + SHELF_W - 14, sepY); ctx.stroke();
+
+        // Montaż + Cena (inline, tylko jeśli wisząca)
+        let curY = sepY + 14;
+        const _stv = (d.shelfTypeValue||'').toLowerCase();
+        // Montaż pokazuj tylko przy półce modułowej i na kubki
+        const showMount = _stv === 'modular' || _stv === 'mug_shelf';
+        const _mountVal = (d.raw?.mount || d.mountType || d.mount || '').toLowerCase();
+        const isHanging = _mountVal.includes('hang') || _mountVal.includes('wisz');
+        const isStanding = !isHanging;
+        if (showMount) {
+            ctx.fillStyle = '#9ca3af'; ctx.font = '500 10px Arial,sans-serif';
+            ctx.fillText('MONTAŻ', x + 14, curY);
+            const pillColor = isHanging ? '#dbeafe' : '#dcfce7';
+            const pillTextColor = isHanging ? '#1d4ed8' : '#15803d';
+            const pillLabel = isHanging ? 'Wisząca' : 'Stojąca na blacie';
+            const pillW = isHanging ? 80 : 140;
+            ctx.fillStyle = pillColor;
+            ctx.beginPath(); ctx.roundRect(x + 14, curY + 4, pillW, 22, 11); ctx.fill();
+            ctx.fillStyle = pillTextColor; ctx.font = '500 12px Arial,sans-serif';
+            ctx.fillText(pillLabel, x + 24, curY + 19);
+            curY += 34;
         }
+
+        // Cena
+        if (shelf.price) {
+            const cX = x + SHELF_W - 14;
+            ctx.fillStyle = '#9ca3af'; ctx.font = '500 10px Arial,sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('CENA', cX, sepY + 14);
+            ctx.fillStyle = '#16a34a'; ctx.font = '500 15px Arial,sans-serif';
+            ctx.fillText(shelf.price.total.toFixed(2) + ' zł', cX, sepY + 32);
+            ctx.textAlign = 'left';
+        }
+
+        // Kod konfiguracyjny — szary blok poniżej montaż/cena
+        const codeBoxY = sepY + 40;
+        ctx.fillStyle = '#f9fafb';
+        ctx.beginPath(); ctx.roundRect(x + 14, codeBoxY, SHELF_W - 28, 46, 6); ctx.fill();
+        ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.roundRect(x + 14, codeBoxY, SHELF_W - 28, 46, 6); ctx.stroke();
+        ctx.fillStyle = '#9ca3af'; ctx.font = '500 11px Arial,sans-serif';
+        ctx.fillText('KOD KONFIGURACYJNY', x + 22, codeBoxY + 14);
+        ctx.fillStyle = '#111827'; ctx.font = 'bold 16px "Courier New",monospace';
+        let dCode = d.code || '—';
+        while (ctx.measureText(dCode).width > SHELF_W - 44 && dCode.length > 8) dCode = dCode.slice(0,-2)+'…';
+        ctx.fillText(dCode, x + 22, codeBoxY + 36);
     });
 
     // === KARTA CENY — jasna, jak na stronie ===
@@ -7721,11 +7938,7 @@ async function generateCompositeImage(shelves) {
     ctx.beginPath(); ctx.moveTo(c2x-20, barY+20); ctx.lineTo(c2x-20, barY+PRICE_BAR_H-20); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(c3x-20, barY+20); ctx.lineTo(c3x-20, barY+PRICE_BAR_H-20); ctx.stroke();
 
-    // Kolumna 1: suma czesciowa
-    ctx.fillStyle = '#9ca3af'; ctx.font = '600 12px Arial,sans-serif'; ctx.textAlign = 'left';
-    ctx.fillText('SUMA CZĘŚCIOWA', c1x, barMid - 18);
-    ctx.fillStyle = '#111827'; ctx.font = 'bold 28px Arial,sans-serif';
-    ctx.fillText(subtotal.toFixed(2)+' zł', c1x, barMid + 14);
+    // Kolumna 1: pusta
 
     // Kolumna 2: rabaty — tylko jesli sa
     if (totalDiscount > 0) {
