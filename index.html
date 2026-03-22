@@ -7632,6 +7632,23 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             submitOrderBtn.disabled = true;
                             submitLabel.textContent = 'Wysyłam...';
 
+                            // 3. Pobierz pierwszy dostępny status z BaseLinker
+                            let resolvedStatusId = 0;
+                            try {
+                                const statusResp = await fetch('https://api.baselinker.com/connector.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: new URLSearchParams({ token: BL_TOKEN, method: 'getOrderStatusList', parameters: '{}' })
+                                });
+                                const statusData = await statusResp.json();
+                                if (statusData.status === 'SUCCESS' && statusData.statuses && statusData.statuses.length > 0) {
+                                    // Szukaj statusu z nazwą zawierającą "nowe" lub "oczekuj", w razie braku użyj pierwszego
+                                    const found = statusData.statuses.find(s => /nowe|oczekuj|new|pending/i.test(s.name));
+                                    resolvedStatusId = found ? found.id : statusData.statuses[0].id;
+                                    console.log('Używam statusu:', resolvedStatusId, found ? found.name : statusData.statuses[0].name);
+                                }
+                            } catch(e) { console.warn('Nie można pobrać statusów, używam 0:', e); }
+
                             // 3. Buduj produkty dla BaseLinker
                             const totals = calculateCartTotal();
                             const products = cart.map(item => ({
@@ -7653,7 +7670,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             const ORDER_SOURCE_ID = 16611;
 
                             const orderPayload = {
-                                order_status_id: 11,
+                                order_status_id: resolvedStatusId,
                                 custom_source_id: ORDER_SOURCE_ID,
                                 date_add: Math.floor(Date.now() / 1000),
                                 currency: 'PLN',
