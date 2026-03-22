@@ -7635,10 +7635,10 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             // 3. Pobierz pierwszy dostępny status z BaseLinker
                             let resolvedStatusId = 0;
                             try {
-                                const statusResp = await fetch('https://api.baselinker.com/connector.php', {
+                                const statusResp = await fetch(PROXY_URL, {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                    body: new URLSearchParams({ token: BL_TOKEN, method: 'getOrderStatusList', parameters: '{}' })
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ method: 'getOrderStatusList', parameters: {} })
                                 });
                                 const statusData = await statusResp.json();
                                 if (statusData.status === 'SUCCESS' && statusData.statuses && statusData.statuses.length > 0) {
@@ -7662,11 +7662,8 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             }));
 
                             // 4. Payload do BaseLinker API
-                            // ⚠️ WAŻNE: Zastąp TWOJ_TOKEN_BASELINKER swoim tokenem API z BaseLinker
-                            // Panel BaseLinker → Moje konto → API → Wygeneruj token
-                            const BL_TOKEN = '6009939-6002973-0ML6NLV57GUQ1351TH55IXHKVVGCAC54IWSOKGHYMIPF5WH8X9W51TIZCUVO073F';
-                            // ⚠️ WAŻNE: Zastąp 0 numerem ID swojego źródła zamówień w BaseLinker
-                            // Panel BaseLinker → Zamówienia → Dodaj źródło → skopiuj ID
+                            // ⚠️ WAŻNE: Wgraj proxy.php na hosting z PHP i wstaw jego adres poniżej
+                            const PROXY_URL = 'https://polki-proxy.rf.gd/proxy.php';
                             const ORDER_SOURCE_ID = 16611;
 
                             const orderPayload = {
@@ -7703,14 +7700,10 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
 
                             try {
                                 // 5. Wysyłka przez BaseLinker API
-                                const response = await fetch('https://api.baselinker.com/connector.php', {
+                                const response = await fetch(PROXY_URL, {
                                     method: 'POST',
-                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                    body: new URLSearchParams({
-                                        token: BL_TOKEN,
-                                        method: 'addOrder',
-                                        parameters: JSON.stringify(orderPayload)
-                                    })
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ method: 'addOrder', parameters: orderPayload })
                                 });
                                 const result = await response.json();
 
