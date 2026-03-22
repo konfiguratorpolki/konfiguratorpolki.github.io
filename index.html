@@ -7594,6 +7594,8 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                     if(downloadCartSummaryBtn) downloadCartSummaryBtn.addEventListener('click', downloadFullCartSummary);
                     
                     // === PRZYCISK ZŁÓŻ ZAMÓWIENIE — integracja z BaseLinker ===
+                    const PROXY_URL = 'https://polki-proxy.rf.gd/proxy.php';
+                    const ORDER_SOURCE_ID = 16611;
                     const submitOrderBtn = document.getElementById('submitOrderBtn');
                     if (submitOrderBtn) {
                         submitOrderBtn.addEventListener('click', async () => {
@@ -7662,9 +7664,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             }));
 
                             // 4. Payload do BaseLinker API
-                            // ⚠️ WAŻNE: Wgraj proxy.php na hosting z PHP i wstaw jego adres poniżej
-                            const PROXY_URL = 'https://polki-proxy.rf.gd/proxy.php';
-                            const ORDER_SOURCE_ID = 16611;
+
 
                             const orderPayload = {
                                 order_status_id: resolvedStatusId,
