@@ -7818,6 +7818,11 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
 
                             // 4. Payload do BaseLinker API
 
+                            // Dane faktury VAT (dedykowane pola BaseLinker)
+                            const invCompanyVal  = wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim()  || '') : '';
+                            const invNipVal      = wantInvoice ? (document.getElementById('invoiceNip')?.value.trim()       || '') : '';
+                            const invPostCodeVal = wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim()  || '') : '';
+                            const invAddrVal     = wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()   || '') : '';
 
                             const orderPayload = {
                                 order_status_id: resolvedStatusId,
@@ -7835,8 +7840,15 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                 email: email,
                                 phone: phone,
                                 user_login: email,
-                                user_comments: (() => { let c = 'Tel: ' + phone + (notes ? ' | ' + notes : '') + (orderCode ? '\n\nKod konfiguracji:\n' + orderCode : ''); const invoiceFields = document.getElementById('invoiceFields'); if (invoiceFields && invoiceFields.style.display !== 'none') { const company = (document.getElementById('invoiceCompany') || {}).value || ''; const nip = (document.getElementById('invoiceNip') || {}).value || ''; const invAddr = (document.getElementById('invoiceAddress') || {}).value || ''; if (company || nip) c += '\n\nFAKTURA VAT:\nFirma: ' + company + '\nNIP: ' + nip + '\nAdres: ' + invAddr; } return c; })(),
+                                user_comments: (notes ? notes : '') + (orderCode ? (notes ? '\n\n' : '') + 'Kod konfiguracji:\n' + orderCode : ''),
                                 admin_comments: 'Zamowienie z konfiguratora na stronie',
+                                want_invoice: wantInvoice ? 1 : 0,
+                                invoice_fullname: wantInvoice ? (firstName + ' ' + lastName) : '',
+                                invoice_company: invCompanyVal,
+                                invoice_nip: invNipVal,
+                                invoice_address: invAddrVal,
+                                invoice_postcode: invPostCodeVal,
+                                invoice_country_code: wantInvoice ? 'PL' : '',
                                 products: products
                             };
 
@@ -9865,7 +9877,7 @@ function toggleInvoiceSection() {
         </div>
         <div>
           <div style="font-size:.7rem;color:#9ca3af;margin-bottom:1px">E-mail</div>
-          <div style="font-weight:500"><a href="mailto:nowywymiar2@gmail.com" style="color:#374151;text-decoration:none;">nowywymiar2@gmail.com</a></div>
+          <div style="font-weight:500"><a href="/cdn-cgi/l/email-protection#ee80819997999783878f9cdcae89838f8782c08d8183" style="color:#374151;text-decoration:none;"><span class="__cf_email__" data-cfemail="a1cfced6d8d6d8ccc8c0d393e1c6ccc0c8cd8fc2cecc">[email&#160;protected]</span></a></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:#374151">
@@ -9909,84 +9921,139 @@ function toggleInvoiceSection() {
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 function otworzKontakt(){var m=document.getElementById('kontaktModal');m.style.display='flex';document.body.style.overflow='hidden';}
 
 function zamknijKontakt(){var m=document.getElementById('kontaktModal');m.style.display='none';document.body.style.overflow='';}
 </script>
-<div id="snapZoom" style="position:fixed;z-index:9999;width:280px;height:280px;background:#f0f0f0;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 12px 40px rgba(0,0,0,.22);overflow:hidden;display:none;pointer-events:none;transition:opacity .18s ease,transform .18s ease;"><img id="snapZoomImg" src="" style="width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;"></div>
+<!-- POWIĘKSZENIE MINIATUR W KOSZYKU I PODSUMOWANIU -->
+<div id="snapZoom" style="position:fixed;z-index:99999;width:300px;height:300px;background:#fff;border-radius:14px;border:1.5px solid #e5e7eb;box-shadow:0 16px 48px rgba(0,0,0,0.22);overflow:hidden;display:none;pointer-events:none;opacity:0;transition:opacity 0.18s ease,transform 0.18s ease;transform:scale(0.88);">
+  <div style="position:absolute;top:6px;right:8px;font-size:9px;color:#9ca3af;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;z-index:2;">Podgląd</div>
+  <img id="snapZoomImg" src="" style="width:100%;height:100%;object-fit:contain;display:block;-webkit-user-select:none;user-select:none;pointer-events:none;">
+</div>
 <script>
 (function(){
-var box=document.getElementById('snapZoom');
-var img=document.getElementById('snapZoomImg');
-var _h;
-var _activeThumb=null;
+  var box = document.getElementById('snapZoom');
+  var img = document.getElementById('snapZoomImg');
+  var hideTimer = null;
+  var activeThumb = null;
 
-function show(th){
-  var s=th.dataset.snap;if(!s)return;
-  img.src=s;
-  var r=th.getBoundingClientRect(),bw=280,bh=280;
-  var left=r.right+10;
-  if(left+bw>window.innerWidth-8)left=r.left-bw-10;
-  var top=r.top+r.height/2-bh/2;
-  top=Math.max(8,Math.min(top,window.innerHeight-bh-8));
-  box.style.left=left+'px';box.style.top=top+'px';
-  box.style.opacity='0';box.style.transform='scale(0.88)';
-  box.style.display='block';
-  requestAnimationFrame(function(){box.style.opacity='1';box.style.transform='scale(1)';});
-}
-function hide(){
-  clearTimeout(_h);
-  _h=setTimeout(function(){
-    box.style.opacity='0';box.style.transform='scale(0.88)';
-    setTimeout(function(){box.style.display='none';},180);
-  },50);
-  _activeThumb=null;
-}
+  function showZoom(thumb) {
+    var src = thumb.dataset.snap;
+    if (!src) return;
+    clearTimeout(hideTimer);
 
-// Desktop: hover
-document.addEventListener('mouseover',function(e){var t=e.target.closest('.cart-item-thumb');if(t&&t.dataset.snap){clearTimeout(_h);show(t);}});
-document.addEventListener('mouseout',function(e){var t=e.target.closest('.cart-item-thumb');if(t){hide();}});
+    img.src = src;
 
-// Mobile: tap to toggle (tap same thumb = close, tap other = switch, tap outside = close)
-document.addEventListener('touchstart',function(e){
-  var t=e.target.closest('.cart-item-thumb');
-  if(t&&t.dataset.snap){
-    e.preventDefault();
-    e.stopPropagation();
-    if(_activeThumb===t){
-      hide();
-      return;
+    var r = thumb.getBoundingClientRect();
+    var bw = 300, bh = 300;
+    var margin = 12;
+
+    // Pozycja: najpierw po prawej, jeśli nie mieści się — po lewej
+    var left = r.right + margin;
+    if (left + bw > window.innerWidth - margin) {
+      left = r.left - bw - margin;
     }
-    _activeThumb=t;
-    clearTimeout(_h);
-    var s=t.dataset.snap;
-    img.src=s;
-    var r=t.getBoundingClientRect(),bw=260,bh=260;
-    var left=r.left+r.width/2-bw/2;
-    left=Math.max(8,Math.min(left,window.innerWidth-bw-8));
-    var top=r.top-bh-12;
-    if(top<8)top=r.bottom+12;
-    top=Math.max(8,Math.min(top,window.innerHeight-bh-8));
-    box.style.left=left+'px';box.style.top=top+'px';
-    box.style.opacity='0';box.style.transform='scale(0.88)';
-    box.style.display='block';
-    requestAnimationFrame(function(){box.style.opacity='1';box.style.transform='scale(1)';});
-  } else if(_activeThumb){
-    hide();
+    // Jeśli i po lewej nie ma miejsca — wyśrodkuj nad/pod
+    if (left < margin) {
+      left = Math.max(margin, Math.min(r.left + r.width/2 - bw/2, window.innerWidth - bw - margin));
+    }
+
+    // Pionowo: wyśrodkuj względem miniatury
+    var top = r.top + r.height/2 - bh/2;
+    top = Math.max(margin, Math.min(top, window.innerHeight - bh - margin));
+
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.display = 'block';
+
+    // Animacja pojawienia się
+    requestAnimationFrame(function() {
+      box.style.opacity = '1';
+      box.style.transform = 'scale(1)';
+    });
   }
-},{passive:false,capture:true});
 
-// Block context menu on thumbnails (long-press save dialog)
-document.addEventListener('contextmenu',function(e){
-  if(e.target.closest('.cart-item-thumb')){e.preventDefault();}
-});
+  function hideZoom() {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function() {
+      box.style.opacity = '0';
+      box.style.transform = 'scale(0.88)';
+      setTimeout(function() {
+        box.style.display = 'none';
+        img.src = '';
+      }, 180);
+    }, 60);
+    activeThumb = null;
+  }
 
-// Block long-press save dialog on the zoom image itself
-box.addEventListener('contextmenu',function(e){e.preventDefault();});
-img.addEventListener('contextmenu',function(e){e.preventDefault();});
-box.addEventListener('touchstart',function(e){e.preventDefault();},{passive:false});
+  // ── DESKTOP: najechanie myszą ──
+  document.addEventListener('mouseover', function(e) {
+    var t = e.target.closest('.cart-item-thumb');
+    if (t && t.dataset.snap) {
+      clearTimeout(hideTimer);
+      activeThumb = t;
+      showZoom(t);
+    }
+  });
+  document.addEventListener('mouseout', function(e) {
+    var t = e.target.closest('.cart-item-thumb');
+    if (t) hideZoom();
+  });
+
+  // ── MOBILE: dotknięcie miniatury ──
+  document.addEventListener('touchstart', function(e) {
+    var t = e.target.closest('.cart-item-thumb');
+    if (t && t.dataset.snap) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (activeThumb === t) {
+        // Drugie dotknięcie tej samej = zamknij
+        hideZoom();
+        return;
+      }
+      activeThumb = t;
+      clearTimeout(hideTimer);
+
+      var src = t.dataset.snap;
+      img.src = src;
+
+      var r = t.getBoundingClientRect();
+      var bw = 260, bh = 260;
+      var margin = 10;
+
+      // Na mobile: pokaż nad miniaturą
+      var left = r.left + r.width/2 - bw/2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - bw - margin));
+      var top = r.top - bh - 14;
+      if (top < margin) top = r.bottom + 14;
+      top = Math.max(margin, Math.min(top, window.innerHeight - bh - margin));
+
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+      box.style.display = 'block';
+      requestAnimationFrame(function() {
+        box.style.opacity = '1';
+        box.style.transform = 'scale(1)';
+      });
+    } else if (activeThumb) {
+      hideZoom();
+    }
+  }, { passive: false, capture: true });
+
+  // Zamknij przy dotknięciu poza miniaturą (scroll etc.)
+  document.addEventListener('touchmove', function() {
+    if (activeThumb) hideZoom();
+  }, { passive: true });
+
+  // Blokada menu kontekstowego na miniaturach
+  document.addEventListener('contextmenu', function(e) {
+    if (e.target.closest('.cart-item-thumb')) e.preventDefault();
+  });
+
+  // Blokada long-press na samym obrazku powiększenia
+  box.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+  box.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
 
 })();
 </script>
-</body></html>
