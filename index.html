@@ -7805,13 +7805,38 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                 }
                             } catch(e) { console.warn('Nie można pobrać statusów, używam 0:', e); }
 
-                            // 3. Buduj produkty dla BaseLinker
+                            // 3. Buduj produkty dla BaseLinker — z cenami po rabatach
                             const totals = calculateCartTotal();
-                            const products = cart.map(item => ({
-                                name: item.name,
-                                sku: item.code,
-                                quantity: item.quantity,
-                                price_brutto: item.price,
+
+                            // Rozwiń koszyk do pojedynczych jednostek
+                            const allUnits = [];
+                            cart.forEach(item => {
+                                for (let i = 0; i < item.quantity; i++) {
+                                    allUnits.push({ name: item.name, code: item.code, price: item.price });
+                                }
+                            });
+
+                            // Przypisz rabaty do jednostek
+                            const totalUnits = allUnits.length;
+                            if (totalUnits === 1) {
+                                allUnits[0].finalPrice = allUnits[0].price * (1 - DISCOUNTS.discount1item);
+                            } else if (totalUnits >= 2) {
+                                allUnits.sort((a, b) => b.price - a.price);
+                                allUnits[0].finalPrice = allUnits[0].price * (1 - DISCOUNTS.discountBest);
+                                allUnits[allUnits.length - 1].finalPrice = allUnits[allUnits.length - 1].price * (1 - DISCOUNTS.discountCheap);
+                                for (let i = 1; i < allUnits.length - 1; i++) {
+                                    allUnits[i].finalPrice = allUnits[i].price;
+                                }
+                            } else {
+                                allUnits.forEach(u => { u.finalPrice = u.price; });
+                            }
+
+                            // Buduj listę produktów (każda jednostka osobno, żeby ceny po rabatach były widoczne)
+                            const products = allUnits.map(unit => ({
+                                name: unit.name,
+                                sku: unit.code,
+                                quantity: 1,
+                                price_brutto: parseFloat(unit.finalPrice.toFixed(2)),
                                 tax_rate: 23,
                                 weight: 2
                             }));
