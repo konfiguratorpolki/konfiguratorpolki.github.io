@@ -7731,7 +7731,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                 updateCartDisplay(); 
                 
                 if (cartSummaryModalOverlay) {
-                    cartSummaryModalOverlay.addEventListener('click', (event) => { if (event.target === cartSummaryModalOverlay) closeCartSummaryModal(); });
+                    // Modal zamyka się tylko przez X
                     if(cartSummaryModalCloseBtnTop) cartSummaryModalCloseBtnTop.addEventListener('click', closeCartSummaryModal);
                     if(downloadCartSummaryBtn) downloadCartSummaryBtn.addEventListener('click', downloadFullCartSummary);
                     
@@ -7765,11 +7765,11 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             if (!city)      missing.push('Miasto');
                             const invoiceFieldsEl = document.getElementById('invoiceFields');
                             const wantInvoice = invoiceFieldsEl && invoiceFieldsEl.style.display !== 'none';
+                            const invCompany = wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim() || '') : '';
+                            const invNip = wantInvoice ? (document.getElementById('invoiceNip')?.value.trim() || '') : '';
+                            const invPostCode = wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim() || '') : '';
+                            const invAddr = wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim() || '') : '';
                             if (wantInvoice) {
-                                const invCompany = document.getElementById('invoiceCompany')?.value.trim();
-                                const invNip = document.getElementById('invoiceNip')?.value.trim();
-                                const invPostCode = document.getElementById('invoicePostCode')?.value.trim();
-                                const invAddr = document.getElementById('invoiceAddress')?.value.trim();
                                 if (!invCompany) missing.push('Nazwa firmy');
                                 if (!invNip) missing.push('NIP');
                                 if (!invPostCode) missing.push('Kod pocztowy firmy');
@@ -7818,6 +7818,12 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
 
                             // 4. Payload do BaseLinker API
 
+                            // Buduj user_comments: TYLKO notatka klienta + kody konfiguracji
+                            // Telefon i dane faktury idą do osobnych pól Baselinker - NIE do komentarzy
+                            let userCommentsParts = [];
+                            if (notes) userCommentsParts.push(notes);
+                            if (orderCode) userCommentsParts.push('Kod konfiguracji:\n' + orderCode);
+                            const cleanUserComments = userCommentsParts.join('\n\n');
 
                             const orderPayload = {
                                 order_status_id: resolvedStatusId,
@@ -7835,7 +7841,15 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                 email: email,
                                 phone: phone,
                                 user_login: email,
-                                user_comments: (() => { let c = 'Tel: ' + phone + (notes ? ' | ' + notes : '') + (orderCode ? '\n\nKod konfiguracji:\n' + orderCode : ''); const invoiceFields = document.getElementById('invoiceFields'); if (invoiceFields && invoiceFields.style.display !== 'none') { const company = (document.getElementById('invoiceCompany') || {}).value || ''; const nip = (document.getElementById('invoiceNip') || {}).value || ''; const invAddr = (document.getElementById('invoiceAddress') || {}).value || ''; if (company || nip) c += '\n\nFAKTURA VAT:\nFirma: ' + company + '\nNIP: ' + nip + '\nAdres: ' + invAddr; } return c; })(),
+                                user_comments: cleanUserComments,
+                                want_invoice: wantInvoice ? 1 : 0,
+                                invoice_fullname: wantInvoice ? (firstName + ' ' + lastName) : '',
+                                invoice_company: wantInvoice ? invCompany : '',
+                                invoice_nip: wantInvoice ? invNip : '',
+                                invoice_address: wantInvoice ? invAddr : '',
+                                invoice_postcode: wantInvoice ? invPostCode : '',
+                                invoice_city: wantInvoice ? city : '',
+                                invoice_country_code: wantInvoice ? 'PL' : '',
                                 admin_comments: 'Zamowienie z konfiguratora na stronie',
                                 products: products
                             };
@@ -9865,7 +9879,7 @@ function toggleInvoiceSection() {
         </div>
         <div>
           <div style="font-size:.7rem;color:#9ca3af;margin-bottom:1px">E-mail</div>
-          <div style="font-weight:500"><a href="mailto:nowywymiar2@gmail.com" style="color:#374151;text-decoration:none;">nowywymiar2@gmail.com</a></div>
+          <div style="font-weight:500"><a href="/cdn-cgi/l/email-protection#abc5c4dcd2dcd2c6c2cad999ebccc6cac2c785c8c4c6" style="color:#374151;text-decoration:none;"><span class="__cf_email__" data-cfemail="b1dfdec6c8c6c8dcd8d0c383f1d6dcd0d8dd9fd2dedc">[email&#160;protected]</span></a></div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:#374151">
@@ -9909,7 +9923,7 @@ function toggleInvoiceSection() {
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 function otworzKontakt(){var m=document.getElementById('kontaktModal');m.style.display='flex';document.body.style.overflow='hidden';}
 
 function zamknijKontakt(){var m=document.getElementById('kontaktModal');m.style.display='none';document.body.style.overflow='';}
@@ -9983,10 +9997,4 @@ document.addEventListener('contextmenu',function(e){
 });
 
 // Block long-press save dialog on the zoom image itself
-box.addEventListener('contextmenu',function(e){e.preventDefault();});
-img.addEventListener('contextmenu',function(e){e.preventDefault();});
-box.addEventListener('touchstart',function(e){e.preventDefault();},{passive:false});
-
-})();
-</script>
-</body></html>
+box.addEv
