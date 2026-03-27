@@ -2666,7 +2666,7 @@ body.no-scroll {
                 <div class="flex items-center gap-2">
                     <button id="submitOrderBtn" class="px-6 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-md shadow-sm hover:shadow-lg flex items-center gap-2 transition-all">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                        <span id="submitOrderBtnLabel">Złóż zamówienie</span>
+                        <span id="submitOrderBtnLabel">Złóż zamówienie i zapłać</span>
                     </button>
                 </div>
             </div>
@@ -4436,6 +4436,7 @@ function updateCartDisplay() { if (!cartItemsContainer || !cartBadges) return; c
             if (config.type === 'mug_shelf') {
                 if (Array.from(widthSelect.options).some(opt => opt.value === String(config.width))) { widthSelect.value = String(config.width); } else if (widthSelect.options.length > 0) { widthSelect.value = widthSelect.options[0].value; }
                 if (Array.from(heightSelect.options).some(opt => opt.value === String(config.height))) { heightSelect.value = String(config.height); } else if (heightSelect.options.length > 0) { heightSelect.value = heightSelect.options[0].value; }
+                handleMugShelfHeightChange(true);
             } else {
                 const widthValueString = String(config.width);
                 const widthOptionExists = Array.from(widthSelect.options).some(opt => opt.value === widthValueString);
@@ -5084,11 +5085,12 @@ function fitCameraToShelf() {
                         masterTimeline.progress(1);
                         return;
                     }
+                    // Centruj tylko po Y — geometria jest symetryczna w X/Z
+                    // Centrowanie po X powoduje przesunięcie półki gdy przegródki są asymetryczne
                     const box = new THREE.Box3().setFromObject(shelfGroup);
-                    const center = box.getCenter(new THREE.Vector3());
-                    shelfGroup.children.forEach(child => child.position.sub(center));
-                    const _mobOff = 0;
-                    shelfGroup.position.y = _mobOff;
+                    const centerY = box.getCenter(new THREE.Vector3()).y;
+                    shelfGroup.children.forEach(child => { child.position.y -= centerY; });
+                    shelfGroup.position.set(0, 0, 0);
                     shelfGroup.scale.set(1.1, 1.1, 1.1);
                     scene.add(shelfGroup);
                 });
@@ -5377,16 +5379,6 @@ function fitCameraToShelf() {
                 let bottomPanel = shelfGroup.getObjectByName("bottomPanel");
                 const defaultMaterial = new THREE.MeshStandardMaterial(originalPreviewMaterialParams);
 
-                // Półka na kubki: zmiana wymiaru → pełen rebuild
-            if (shelfType === 'mug_shelf' && (
-                lastValidConfig.width !== config.width ||
-                lastValidConfig.height !== config.height
-            )) {
-                await rebuildAndAnimateIn(config, animateChanges);
-                lastValidConfig = { ...config };
-                return;
-            }
-
             if (!leftSide || !rightSide) { 
                     await rebuildAndAnimateIn(config, animateChanges);
                     lastValidConfig = { ...config };
@@ -5451,14 +5443,18 @@ function fitCameraToShelf() {
                         lastShelfY = targetY - thickness / 2;
                     }
                 } else {
-                    const topThicknessActual = topExists ? thickness : 0;
-                    const bottomThicknessActual = bottomExists ? thickness : 0;
-                    const totalAvailableHeight = targetHeight - topThicknessActual - bottomThicknessActual;
-                    const gap = (totalAvailableHeight - targetShelfCount * thickness) / (targetShelfCount + 1);
-                    let startY = bottomExists ? (-targetHeight / 2 + bottomThicknessActual) : (-targetHeight / 2);
-                    
                     const useCustomPos = config.customPositions && config.customPositions.length === targetShelfCount;
                     const bottomRef = -targetHeight / 2 + thickness;
+
+                    // Gdy zmienia się tylko noTop/noBottom (bez zmian wymiarów i liczby półek),
+                    // półki wewnętrzne pozostają na miejscu — ruszamy tylko panele górny/dolny
+                    const onlyPanelToggled = (
+                        lastValidConfig.width === config.width &&
+                        lastValidConfig.height === config.height &&
+                        lastValidConfig.depth === config.depth &&
+                        lastValidConfig.shelfCount === config.shelfCount &&
+                        (lastValidConfig.noTopShelf !== config.noTopShelf || lastValidConfig.noBottomShelf !== config.noBottomShelf)
+                    );
 
                     for (let i = 0; i < targetShelfCount; i++) {
                         const shelfName = `internalShelf_${i}`;
@@ -5466,8 +5462,15 @@ function fitCameraToShelf() {
                         let targetY;
                         if (useCustomPos) {
                             targetY = bottomRef + config.customPositions[i] / 10;
+                        } else if (onlyPanelToggled) {
+                            // Zostaw półkę tam gdzie jest — nie przeliczaj pozycji
+                            targetY = shelf ? shelf.position.y : 0;
                         } else {
-                            // Zawsze przelicz pozycję na nowo — uwzględnia noTop/noBottom
+                            const topThicknessActual = topExists ? thickness : 0;
+                            const bottomThicknessActual = bottomExists ? thickness : 0;
+                            const totalAvailableHeight = targetHeight - topThicknessActual - bottomThicknessActual;
+                            const gap = (totalAvailableHeight - targetShelfCount * thickness) / (targetShelfCount + 1);
+                            const startY = bottomExists ? (-targetHeight / 2 + bottomThicknessActual) : (-targetHeight / 2);
                             targetY = startY + (i + 1) * gap + (i + 0.5) * thickness;
                         }
 
@@ -5520,117 +5523,102 @@ function fitCameraToShelf() {
             }
 
             if (shelfType === 'mug_shelf') {
+                // Poczekaj na zakończenie animacji korpusu, potem przelicz i wstaw przegródki
                 const { width: widthNum, height: heightVal, depth: depthVal, addDividersTop, addDividersMiddle, addDividersBottom } = config;
-                const width = widthNum / 10; const depth = parseFloat(depthVal) / 10;
-                const defaultMaterial = new THREE.MeshStandardMaterial(originalPreviewMaterialParams);
-                const dividersToRemove = shelfGroup.children.filter(child => child.name.startsWith("divider_")); const mugWidthArrowToRemove = shelfGroup.children.filter(child => child.name && (child.name.startsWith("mugWidthArrow_") || child.name.startsWith("mugHeightArrow_")));
-                
-                if (dividersToRemove.length > 0 || mugWidthArrowToRemove.length > 0) {
-                    mugWidthArrowToRemove.forEach(d => shelfGroup.remove(d));
-                    if (dividersToRemove.length > 0) currentAnimationTimeline.to(dividersToRemove.map(d => d.scale), { y: 0.01, duration: animDuration / 2, stagger: 0.03, onComplete: () => {
-                        dividersToRemove.forEach(d => shelfGroup.remove(d));
-                    }}, ">-0.2");
-                }
-                
-                const topPanel = shelfGroup.getObjectByName("topPanel");
-                const bottomPanel = shelfGroup.getObjectByName("bottomPanel");
-                const internalShelves = shelfGroup.children.filter(child => child.name.startsWith("internalShelf_"));
-                internalShelves.sort((a, b) => b.position.y - a.position.y);
+                const mugWidth = widthNum / 10;
+                const mugDepth = parseFloat(depthVal) / 10;
+                const mugThickness = thickness;
 
-                if (topPanel && bottomPanel && internalShelves.length > 0) {
-                    const innerWidthForDividers = width - 2 * thickness; const dividerThicknessThreeJs = thickness; let levels = [];
-                    internalShelves.sort((a, b) => b.position.y - a.position.y);
-                    
-                    if (heightVal === '60' && internalShelves.length === 3) {
+                currentAnimationTimeline.call(() => {
+                    // Usuń stare przegródki i strzałki
+                    const toRemove = shelfGroup.children.filter(c => c.name && (
+                        c.name.startsWith('divider_') ||
+                        c.name.startsWith('mugWidthArrow_') ||
+                        c.name.startsWith('mugHeightArrow_')
+                    ));
+                    toRemove.forEach(c => shelfGroup.remove(c));
+
+                    if (!addDividersTop && !addDividersMiddle && !addDividersBottom) return;
+
+                    const tp = shelfGroup.getObjectByName('topPanel');
+                    const bp = shelfGroup.getObjectByName('bottomPanel');
+                    const shelves = shelfGroup.children
+                        .filter(c => c.name && c.name.startsWith('internalShelf_'))
+                        .sort((a, b) => a.position.y - b.position.y); // [0]=najniższa
+
+                    if (!tp || !bp || shelves.length === 0) return;
+
+                    let levels = [];
+                    if (heightVal === '60' && shelves.length >= 3) {
                         levels = [
-                           { top: topPanel.position.y, bottom: internalShelves[0].position.y },
-                           { top: internalShelves[0].position.y, bottom: internalShelves[1].position.y },
-                           { top: internalShelves[1].position.y, bottom: internalShelves[2].position.y },
-                           { top: internalShelves[2].position.y, bottom: bottomPanel.position.y }
-                       ].map(level => ({ top: level.top - thickness/2, bottom: level.bottom + thickness/2 }));
-                    } else if (heightVal === '40' && internalShelves.length === 2) {
+                            { top: tp.position.y - mugThickness/2, bottom: shelves[2].position.y + mugThickness/2 },
+                            { top: shelves[2].position.y - mugThickness/2, bottom: shelves[1].position.y + mugThickness/2 },
+                            { top: shelves[1].position.y - mugThickness/2, bottom: shelves[0].position.y + mugThickness/2 },
+                            { top: shelves[0].position.y - mugThickness/2, bottom: bp.position.y + mugThickness/2 }
+                        ];
+                    } else if (heightVal === '40' && shelves.length >= 2) {
                         levels = [
-                           { top: topPanel.position.y, bottom: internalShelves[0].position.y },
-                           { top: internalShelves[0].position.y, bottom: internalShelves[1].position.y },
-                           { top: internalShelves[1].position.y, bottom: bottomPanel.position.y }
-                       ].map(level => ({ top: level.top - thickness/2, bottom: level.bottom + thickness/2 }));
+                            { top: tp.position.y - mugThickness/2, bottom: shelves[1].position.y + mugThickness/2 },
+                            { top: shelves[1].position.y - mugThickness/2, bottom: shelves[0].position.y + mugThickness/2 },
+                            { top: shelves[0].position.y - mugThickness/2, bottom: bp.position.y + mugThickness/2 }
+                        ];
                     }
-                    
-                    const dividersToAdd = [];
-                    const createDividersForLevel = (levelData, levelName) => {
-                        const levelH = Math.max(0.01, levelData.top - levelData.bottom); if (levelH <= 0.01) return;
-                        const yCenter = levelData.bottom + levelH / 2; const dividerGeometry = new THREE.BoxGeometry(dividerThicknessThreeJs, levelH, depth);
-                        
+                    if (levels.length === 0) return;
+
+                    const innerW = mugWidth - 2 * mugThickness;
+                    const mat = new THREE.MeshStandardMaterial(originalPreviewMaterialParams);
+
+                    const createDividers = (levelData, levelName) => {
+                        const levelH = Math.max(0.01, levelData.top - levelData.bottom);
+                        if (levelH <= 0.01) return;
+                        const yCenter = levelData.bottom + levelH / 2;
+                        const geo = new THREE.BoxGeometry(mugThickness, levelH, mugDepth);
                         if (widthNum == 84) {
-                            const numPhysicalDividers = 3;
-                            const singleCompartmentWidth = 1.25;
-                            let currentXPos = -innerWidthForDividers / 2;
-                            for (let i = 0; i < numPhysicalDividers; i++) {
-                                currentXPos += singleCompartmentWidth;
-                                const dividerXCenter = currentXPos + (dividerThicknessThreeJs / 2);
-                                const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), defaultMaterial);
-                                dividerMesh.position.set(dividerXCenter, yCenter, 0);
-                                dividerMesh.name = `divider_${levelName}_${i}`;
-                                dividerMesh.scale.set(1, 0.01, 1);
-                                dividersToAdd.push(dividerMesh);
-                                currentXPos += dividerThicknessThreeJs;
+                            const n84 = 3; const spacing84 = innerW / (n84 + 1);
+                            for (let i = 1; i <= n84; i++) {
+                                const m = new THREE.Mesh(geo.clone(), mat);
+                                m.position.set(-innerW/2 + i*spacing84, yCenter, 0);
+                                m.name = `divider_${levelName}_${i}`;
+                                shelfGroup.add(m);
                             }
                         } else {
-                            const numDividersOriginal = (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0);
-                            if (numDividersOriginal > 0) {
-                                const dividerSpacing = innerWidthForDividers / (numDividersOriginal + 1);
-                                for (let i = 1; i <= numDividersOriginal; i++) {
-                                    const xPos = (-innerWidthForDividers / 2) + i * dividerSpacing;
-                                    const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), defaultMaterial);
-                                    dividerMesh.position.set(xPos, yCenter, 0);
-                                    dividerMesh.name = `divider_${levelName}_${i}`;
-                                    dividerMesh.scale.set(1, 0.01, 1);
-                                    dividersToAdd.push(dividerMesh);
+                            const n = (widthNum == 60) ? 3 : (widthNum == 44) ? 2 : 0;
+                            if (n > 0) {
+                                const spacing = innerW / (n + 1);
+                                for (let i = 1; i <= n; i++) {
+                                    const m = new THREE.Mesh(geo.clone(), mat);
+                                    m.position.set(-innerW/2 + i*spacing, yCenter, 0);
+                                    m.name = `divider_${levelName}_${i}`;
+                                    shelfGroup.add(m);
                                 }
                             }
                         }
                     };
 
-                    if (addDividersTop && levels[0]) createDividersForLevel(levels[0], 'top');
-                    if (addDividersMiddle && levels[1]) createDividersForLevel(levels[1], 'middle');
-                    if (addDividersBottom && levels[2]) createDividersForLevel(levels[2], 'bottom');
+                    if (addDividersTop && levels[0]) createDividers(levels[0], 'top');
+                    if (addDividersMiddle && levels[1]) createDividers(levels[1], 'middle');
+                    if (addDividersBottom && levels[2]) createDividers(levels[2], 'bottom');
 
-                    if (dividersToAdd.length > 0) {
-                        dividersToAdd.forEach(d => shelfGroup.add(d));
-                        currentAnimationTimeline.to(dividersToAdd.map(d => d.scale), { y: 1, duration: animDuration, stagger: 0.1, ease: 'power2.out' }, dividersToRemove.length > 0 ? ">-0.1" : "+=0.2");
-                        // Dodaj wymiary po zakończeniu animacji
-                        currentAnimationTimeline.call(() => {
-                            // Usuń stare wymiary
-                            shelfGroup.children.filter(c => c.name && (c.name.startsWith("mugWidthArrow_") || c.name.startsWith("mugHeightArrow_"))).forEach(c => shelfGroup.remove(c));
-                            // Wysokość — na każdej zaznaczonej przegródce + dolna wnęka h=60
-                            const selLevels = [];
-                            if (addDividersTop && levels[0]) selLevels.push(levels[0]);
-                            if (addDividersMiddle && levels[1]) selLevels.push(levels[1]);
-                            if (addDividersBottom && levels[2]) selLevels.push(levels[2]);
-                            // Dolna duża wnęka dla h=60 — zawsze
-                            if (heightVal === '60' && levels[3]) selLevels.push(levels[3]);
-                            selLevels.forEach(function(lvl) {
-                                if (typeof addMugShelfCompartmentHeightArrow === 'function')
-                                    addMugShelfCompartmentHeightArrow(shelfGroup, widthNum, width, parseFloat(depthVal) / 10, thickness, lvl);
-                            });
-                            // Szerokość — tylko na pierwszej (najwyższej) zaznaczonej przegródce
-                            let wLvl = null;
-                            if (addDividersTop && levels[0]) wLvl = levels[0];
-                            else if (addDividersMiddle && levels[1]) wLvl = levels[1];
-                            else if (addDividersBottom && levels[2]) wLvl = levels[2];
-                            if (wLvl && typeof addMugShelfCompartmentWidthArrow === 'function') {
-                                const _fb = { position: { y: wLvl.bottom - thickness / 2 } };
-                                const _ft = { position: { y: wLvl.top + thickness / 2 } };
-                                addMugShelfCompartmentWidthArrow(shelfGroup, widthNum, width, parseFloat(depthVal) / 10, thickness, _fb, _ft);
-                            }
-                        });
-                    } else if (!addDividersTop && !addDividersMiddle && !addDividersBottom) {
-                        // No dividers selected — remove width arrow if still present
-                        shelfGroup.children.filter(c => c.name && (c.name.startsWith("mugWidthArrow_") || c.name.startsWith("mugHeightArrow_"))).forEach(c => shelfGroup.remove(c));
+                    // Strzałki wymiarów
+                    const selLevels = [];
+                    if (addDividersTop && levels[0]) selLevels.push(levels[0]);
+                    if (addDividersMiddle && levels[1]) selLevels.push(levels[1]);
+                    if (addDividersBottom && levels[2]) selLevels.push(levels[2]);
+                    if (heightVal === '60' && levels[3]) selLevels.push(levels[3]);
+                    selLevels.forEach(lvl => {
+                        if (typeof addMugShelfCompartmentHeightArrow === 'function')
+                            addMugShelfCompartmentHeightArrow(shelfGroup, widthNum, mugWidth, mugDepth, mugThickness, lvl);
+                    });
+                    const wLvl = (addDividersTop && levels[0]) ? levels[0]
+                               : (addDividersMiddle && levels[1]) ? levels[1]
+                               : (addDividersBottom && levels[2]) ? levels[2] : null;
+                    if (wLvl && typeof addMugShelfCompartmentWidthArrow === 'function') {
+                        const fb = { position: { y: wLvl.bottom - mugThickness/2 } };
+                        const ft = { position: { y: wLvl.top + mugThickness/2 } };
+                        addMugShelfCompartmentWidthArrow(shelfGroup, widthNum, mugWidth, mugDepth, mugThickness, fb, ft);
                     }
-                }
+                });
             }
-            
             lastValidConfig = { ...config };
         }
         
@@ -5742,7 +5730,7 @@ function fitCameraToShelf() {
             } 
             return mainGroup; 
         }
-        function buildShelfModel(config) { const group = new THREE.Group(); const { width: widthNum, height: heightVal, depth: depthVal, shelfCount: shelfCountVal, shelfType, noTopShelf, noBottomShelf, addDividersTop, addDividersMiddle, addDividersBottom } = config; if (!widthNum || !heightVal || !depthVal || shelfCountVal === undefined) return group; const defaultMaterial = new THREE.MeshStandardMaterial(originalPreviewMaterialParams); const mkMat = () => defaultMaterial.clone(); const thickness = 0.18; const width = widthNum / 10; const height = parseFloat(heightVal) / 10; const depth = parseFloat(depthVal) / 10; const shelfCount = parseInt(shelfCountVal); if (isNaN(width) || isNaN(height) || isNaN(depth) || width <= 0 || height <= 0 || depth <= 0) return group; let topPanel, bottomPanel; if (!noBottomShelf) { const bottomGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); bottomPanel = new THREE.Mesh(bottomGeometry, mkMat()); bottomPanel.position.set(0, -height / 2 + thickness / 2, 0); bottomPanel.name = "bottomPanel"; group.add(bottomPanel); } if (!noTopShelf) { const topGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); topPanel = new THREE.Mesh(topGeometry, mkMat()); topPanel.position.set(0, height / 2 - thickness / 2, 0); topPanel.name = "topPanel"; group.add(topPanel); } const sideGeometry = new THREE.BoxGeometry(thickness, height, depth); const leftSideMesh = new THREE.Mesh(sideGeometry, mkMat()); leftSideMesh.position.set(-width / 2 + thickness / 2, 0, 0); leftSideMesh.name = "leftSide"; group.add(leftSideMesh); const rightSideMesh = new THREE.Mesh(sideGeometry, mkMat()); rightSideMesh.position.set(width / 2 - thickness / 2, 0, 0); rightSideMesh.name = "rightSide"; group.add(rightSideMesh); const internalShelves = []; if (!isNaN(shelfCount) && shelfCount > 0) { if (shelfType === 'mug_shelf' && heightVal === '60' && topPanel) { const fixedGap = 1.09; const topPanelBottomY = topPanel.position.y - thickness / 2; let lastShelfY = topPanelBottomY; const mugShelfCount60 = 3; for (let i = 0; i < mugShelfCount60; i++) { const shelfY = lastShelfY - fixedGap - thickness / 2; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); lastShelfY = shelfY - thickness / 2; } } else { const topExists = !!topPanel; const bottomExists = !!bottomPanel; const topThicknessActual = topExists ? thickness : 0; const bottomThicknessActual = bottomExists ? thickness : 0; const totalAvailableHeight = height - topThicknessActual - bottomThicknessActual; if (totalAvailableHeight >= shelfCount * thickness && (shelfCount + 1) > 0) { const useCustom = config.customPositions && config.customPositions.length === shelfCount; if (useCustom) { const bottomY = -height / 2 + thickness; for (let i = 0; i < shelfCount; i++) { const posFromBottom = config.customPositions[i] / 10; const shelfY = bottomY + posFromBottom; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } else { const gap = (totalAvailableHeight - shelfCount * thickness) / (shelfCount + 1); let startY = bottomExists ? (-height / 2 + bottomThicknessActual) : (-height / 2); for (let i = 1; i <= shelfCount; i++) { const shelfY = startY + i * gap + (i - 0.5) * thickness; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i-1}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } } } } if (internalShelves.length > 0 && shelfType !== 'mug_shelf') { if (typeof addShelfDimensionArrows === 'function') addShelfDimensionArrows(group, internalShelves, bottomPanel, topPanel, thickness, width, height, depth); } if (shelfType === 'mug_shelf' && topPanel && bottomPanel && internalShelves.length > 0) { if (addDividersTop || addDividersMiddle || addDividersBottom) { const innerWidthForDividers = width - 2 * thickness; const dividerThicknessThreeJs = thickness; let levels = []; internalShelves.sort((a, b) => a.position.y - b.position.y); if (heightVal === '60' && internalShelves.length === 3) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[2].position.y + thickness/2 }, { top: internalShelves[2].position.y - thickness/2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } else if (heightVal === '40' && internalShelves.length === 2) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } const drawDividersForLevel = (levelData) => { const levelH = Math.max(0.01, levelData.top - levelData.bottom); if (levelH <= 0.01) return; const yCenter = levelData.bottom + levelH / 2; const dividerGeometry = new THREE.BoxGeometry(dividerThicknessThreeJs, levelH, depth); if (widthNum == 84) { const numPhysicalDividers = 3; const singleCompartmentWidth = 1.25; let currentXPos = -innerWidthForDividers / 2; for (let i = 0; i < numPhysicalDividers; i++) { currentXPos += singleCompartmentWidth; const dividerXCenter = currentXPos + (dividerThicknessThreeJs / 2); const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(dividerXCenter, yCenter, 0); dividerMesh.name = `divider_h84_${i}`; group.add(dividerMesh); currentXPos += dividerThicknessThreeJs; } } else { const numDividersOriginal = (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0); if (numDividersOriginal > 0) { const dividerSpacing = innerWidthForDividers / (numDividersOriginal + 1); for (let i = 1; i <= numDividersOriginal; i++) { const xPos = (-innerWidthForDividers / 2) + i * dividerSpacing; const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(xPos, yCenter, 0); dividerMesh.name = `divider_${i}`; group.add(dividerMesh); } } } }; if (addDividersTop && levels[0]) drawDividersForLevel(levels[0]); if (addDividersMiddle && levels[1]) drawDividersForLevel(levels[1]); if (addDividersBottom && levels[2]) drawDividersForLevel(levels[2]); // --- Wymiary przegródek kubkowych ---
+        function buildShelfModel(config) { const group = new THREE.Group(); const { width: widthNum, height: heightVal, depth: depthVal, shelfCount: shelfCountVal, shelfType, noTopShelf, noBottomShelf, addDividersTop, addDividersMiddle, addDividersBottom } = config; if (!widthNum || !heightVal || !depthVal || shelfCountVal === undefined) return group; const defaultMaterial = new THREE.MeshStandardMaterial(originalPreviewMaterialParams); const mkMat = () => defaultMaterial.clone(); const thickness = 0.18; const width = widthNum / 10; const height = parseFloat(heightVal) / 10; const depth = parseFloat(depthVal) / 10; const shelfCount = parseInt(shelfCountVal); if (isNaN(width) || isNaN(height) || isNaN(depth) || width <= 0 || height <= 0 || depth <= 0) return group; let topPanel, bottomPanel; if (!noBottomShelf) { const bottomGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); bottomPanel = new THREE.Mesh(bottomGeometry, mkMat()); bottomPanel.position.set(0, -height / 2 + thickness / 2, 0); bottomPanel.name = "bottomPanel"; group.add(bottomPanel); } if (!noTopShelf) { const topGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); topPanel = new THREE.Mesh(topGeometry, mkMat()); topPanel.position.set(0, height / 2 - thickness / 2, 0); topPanel.name = "topPanel"; group.add(topPanel); } const sideGeometry = new THREE.BoxGeometry(thickness, height, depth); const leftSideMesh = new THREE.Mesh(sideGeometry, mkMat()); leftSideMesh.position.set(-width / 2 + thickness / 2, 0, 0); leftSideMesh.name = "leftSide"; group.add(leftSideMesh); const rightSideMesh = new THREE.Mesh(sideGeometry, mkMat()); rightSideMesh.position.set(width / 2 - thickness / 2, 0, 0); rightSideMesh.name = "rightSide"; group.add(rightSideMesh); const internalShelves = []; if (!isNaN(shelfCount) && shelfCount > 0) { if (shelfType === 'mug_shelf' && heightVal === '60' && topPanel) { const fixedGap = 1.09; const topPanelBottomY = topPanel.position.y - thickness / 2; let lastShelfY = topPanelBottomY; const mugShelfCount60 = 3; for (let i = 0; i < mugShelfCount60; i++) { const shelfY = lastShelfY - fixedGap - thickness / 2; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); lastShelfY = shelfY - thickness / 2; } } else { const topExists = !!topPanel; const bottomExists = !!bottomPanel; const topThicknessActual = topExists ? thickness : 0; const bottomThicknessActual = bottomExists ? thickness : 0; const totalAvailableHeight = height - topThicknessActual - bottomThicknessActual; if (totalAvailableHeight >= shelfCount * thickness && (shelfCount + 1) > 0) { const useCustom = config.customPositions && config.customPositions.length === shelfCount; if (useCustom) { const bottomY = -height / 2 + thickness; for (let i = 0; i < shelfCount; i++) { const posFromBottom = config.customPositions[i] / 10; const shelfY = bottomY + posFromBottom; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } else { const gap = (height - 2*thickness - shelfCount * thickness) / (shelfCount + 1); let startY = -height / 2 + thickness; for (let i = 1; i <= shelfCount; i++) { const shelfY = startY + i * gap + (i - 0.5) * thickness; const shelfGeometry = new THREE.BoxGeometry(width - 2 * thickness, thickness, depth); const shelfMesh = new THREE.Mesh(shelfGeometry, mkMat()); shelfMesh.position.set(0, shelfY, 0); shelfMesh.name = `internalShelf_${i-1}`; group.add(shelfMesh); internalShelves.push(shelfMesh); } } } } } if (internalShelves.length > 0 && shelfType !== 'mug_shelf') { if (typeof addShelfDimensionArrows === 'function') addShelfDimensionArrows(group, internalShelves, bottomPanel, topPanel, thickness, width, height, depth); } if (shelfType === 'mug_shelf' && topPanel && bottomPanel && internalShelves.length > 0) { if (addDividersTop || addDividersMiddle || addDividersBottom) { const innerWidthForDividers = width - 2 * thickness; const dividerThicknessThreeJs = thickness; let levels = []; internalShelves.sort((a, b) => a.position.y - b.position.y); if (heightVal === '60' && internalShelves.length === 3) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[2].position.y + thickness/2 }, { top: internalShelves[2].position.y - thickness/2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } else if (heightVal === '40' && internalShelves.length === 2) { levels = [ { top: topPanel.position.y - thickness / 2, bottom: internalShelves[1].position.y + thickness/2 }, { top: internalShelves[1].position.y - thickness/2, bottom: internalShelves[0].position.y + thickness/2 }, { top: internalShelves[0].position.y - thickness/2, bottom: bottomPanel.position.y + thickness / 2 } ]; } const drawDividersForLevel = (levelData) => { const levelH = Math.max(0.01, levelData.top - levelData.bottom); if (levelH <= 0.01) return; const yCenter = levelData.bottom + levelH / 2; const dividerGeometry = new THREE.BoxGeometry(dividerThicknessThreeJs, levelH, depth); if (widthNum == 84) { const n84 = 3; const spacing84 = innerWidthForDividers / (n84 + 1); for (let i = 1; i <= n84; i++) { const xPos = -innerWidthForDividers / 2 + i * spacing84; const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(xPos, yCenter, 0); dividerMesh.name = `divider_h84_${i}`; group.add(dividerMesh); } } else { const numDividersOriginal = (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0); if (numDividersOriginal > 0) { const dividerSpacing = innerWidthForDividers / (numDividersOriginal + 1); for (let i = 1; i <= numDividersOriginal; i++) { const xPos = (-innerWidthForDividers / 2) + i * dividerSpacing; const dividerMesh = new THREE.Mesh(dividerGeometry.clone(), mkMat()); dividerMesh.position.set(xPos, yCenter, 0); dividerMesh.name = `divider_${i}`; group.add(dividerMesh); } } } }; if (addDividersTop && levels[0]) drawDividersForLevel(levels[0]); if (addDividersMiddle && levels[1]) drawDividersForLevel(levels[1]); if (addDividersBottom && levels[2]) drawDividersForLevel(levels[2]); // --- Wymiary przegródek kubkowych ---
             // Wysokość: na każdej zaznaczonej przegródce + dolna wnęka h=60
             const selectedLevelsForHeight = [];
             if (addDividersTop && levels[0]) selectedLevelsForHeight.push(levels[0]);
@@ -7804,10 +7792,19 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                     // === PRZYCISK ZŁÓŻ ZAMÓWIENIE — integracja z BaseLinker ===
                     const PROXY_URL = 'https://baselinker-proxy.007lukasz-m.workers.dev';
                     const ORDER_SOURCE_ID = 16611;
+                    // ════════════════════════════════════════════════════
+                    // NOWY FLOW: Formularz → PayNow → (webhook) → BaseLinker
+                    // Zamówienie trafia do BaseLinker DOPIERO po opłaceniu!
+                    // ════════════════════════════════════════════════════
+
+                    // URL Twojego backendu na Vercel — zmień po wdrożeniu!
+                    const PAYNOW_INIT_URL = 'https://polki-backend-production.up.railway.app/api/paynow-init';
+
                     const submitOrderBtn = document.getElementById('submitOrderBtn');
                     if (submitOrderBtn) {
                         submitOrderBtn.addEventListener('click', async () => {
-                            // 1. Walidacja pól
+
+                            // 1. Pobierz dane z formularza
                             const firstName = document.getElementById('orderFirstName')?.value.trim();
                             const lastName  = document.getElementById('orderLastName')?.value.trim();
                             const email     = document.getElementById('orderEmail')?.value.trim();
@@ -7821,6 +7818,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             const successEl = document.getElementById('orderSuccessMsg');
                             const submitLabel = document.getElementById('submitOrderBtnLabel');
 
+                            // 2. Walidacja
                             const missing = [];
                             if (!firstName) missing.push('Imię');
                             if (!lastName)  missing.push('Nazwisko');
@@ -7832,16 +7830,11 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             const invoiceFieldsEl = document.getElementById('invoiceFields');
                             const wantInvoice = invoiceFieldsEl && invoiceFieldsEl.style.display !== 'none';
                             if (wantInvoice) {
-                                const invCompany = document.getElementById('invoiceCompany')?.value.trim();
-                                const invNip = document.getElementById('invoiceNip')?.value.trim();
-                                const invPostCode = document.getElementById('invoicePostCode')?.value.trim();
-                                const invAddr = document.getElementById('invoiceAddress')?.value.trim();
-                                if (!invCompany) missing.push('Nazwa firmy');
-                                if (!invNip) missing.push('NIP');
-                                if (!invPostCode) missing.push('Kod pocztowy firmy');
-                                if (!invAddr) missing.push('Adres firmy');
+                                if (!document.getElementById('invoiceCompany')?.value.trim())  missing.push('Nazwa firmy');
+                                if (!document.getElementById('invoiceNip')?.value.trim())      missing.push('NIP');
+                                if (!document.getElementById('invoicePostCode')?.value.trim()) missing.push('Kod pocztowy firmy');
+                                if (!document.getElementById('invoiceAddress')?.value.trim())  missing.push('Adres firmy');
                             }
-
                             if (missing.length > 0) {
                                 errEl.textContent = 'Uzupełnij wymagane pola: ' + missing.join(', ');
                                 errEl.classList.remove('hidden');
@@ -7850,109 +7843,68 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                             }
                             errEl.classList.add('hidden');
 
-                            // 2. Blokada przycisku podczas wysyłania
-                            submitOrderBtn.disabled = true;
-                            submitLabel.textContent = 'Wysyłam...';
-
-                            // 3. Pobierz pierwszy dostępny status z BaseLinker
-                            let resolvedStatusId = 0;
-                            try {
-                                const statusResp = await fetch(PROXY_URL, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ method: 'getOrderStatusList', parameters: {} })
-                                });
-                                const statusData = await statusResp.json();
-                                if (statusData.status === 'SUCCESS' && statusData.statuses && statusData.statuses.length > 0) {
-                                    // Szukaj statusu z nazwą zawierającą "nowe" lub "oczekuj", w razie braku użyj pierwszego
-                                    const found = statusData.statuses.find(s => /nowe|oczekuj|new|pending/i.test(s.name));
-                                    resolvedStatusId = found ? found.id : statusData.statuses[0].id;
-                                    console.log('Używam statusu:', resolvedStatusId, found ? found.name : statusData.statuses[0].name);
-                                }
-                            } catch(e) { console.warn('Nie można pobrać statusów, używam 0:', e); }
-
-                            // 3. Buduj produkty dla BaseLinker
+                            // 3. Zbierz dane koszyka
                             const totals = calculateCartTotal();
-                            const products = cart.map(item => ({
-                                name: item.name,
-                                sku: item.code,
-                                quantity: item.quantity,
-                                price_brutto: item.price,
-                                tax_rate: 23,
-                                weight: 2
-                            }));
+                            const amountGr = Math.round(totals.total * 100); // w groszach
 
-                            // 4. Payload do BaseLinker API
+                            // 4. Zablokuj przycisk
+                            submitOrderBtn.disabled = true;
+                            submitLabel.innerHTML = `<svg style="width:16px;height:16px;animation:spin 1s linear infinite;vertical-align:middle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/><path d="M12 2a10 10 0 0110 10" stroke="white" stroke-width="3" stroke-linecap="round"/></svg> Przekierowuję do płatności...`;
 
-                            // Dane faktury VAT (dedykowane pola BaseLinker)
-                            const invCompanyVal  = wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim()  || '') : '';
-                            const invNipVal      = wantInvoice ? (document.getElementById('invoiceNip')?.value.trim()       || '') : '';
-                            const invPostCodeVal = wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim()  || '') : '';
-                            const invAddrVal     = wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()   || '') : '';
-
-                            const orderPayload = {
-                                order_status_id: resolvedStatusId,
-                                custom_source_id: ORDER_SOURCE_ID,
-                                date_add: Math.floor(Date.now() / 1000),
-                                currency: 'PLN',
-                                payment_method: 'przelew',
-                                delivery_method: 'kurier',
-                                delivery_price: totals.shipping,
-                                delivery_fullname: firstName + ' ' + lastName,
-                                delivery_address: street,
-                                delivery_city: city,
-                                delivery_postcode: postCode,
-                                delivery_country_code: 'PL',
-                                email: email,
-                                phone: phone,
-                                user_login: email,
-                                user_comments: (notes ? notes : '') + (orderCode ? (notes ? '\n\n' : '') + 'Kod konfiguracji:\n' + orderCode : ''),
-                                admin_comments: 'Zamowienie z konfiguratora na stronie',
-                                want_invoice: wantInvoice ? 1 : 0,
-                                invoice_fullname: wantInvoice ? (firstName + ' ' + lastName) : '',
-                                invoice_company: invCompanyVal,
-                                invoice_nip: invNipVal,
-                                invoice_address: invAddrVal,
-                                invoice_postcode: invPostCodeVal,
-                                invoice_country_code: wantInvoice ? 'PL' : '',
-                                products: products
-                            };
-
+                            // 5. Wyślij do Vercel → PayNow (zamówienie trafi do BaseLinker dopiero po opłaceniu!)
                             try {
-                                // 5. Wysyłka przez BaseLinker API
-                                const response = await fetch(PROXY_URL, {
-                                    method: 'POST',
+                                const orderData = {
+                                    firstName, lastName, email, phone,
+                                    street, postCode, city, notes, orderCode,
+                                    wantInvoice,
+                                    invCompany:  wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim()  || '') : '',
+                                    invNip:      wantInvoice ? (document.getElementById('invoiceNip')?.value.trim()       || '') : '',
+                                    invPostCode: wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim()  || '') : '',
+                                    invAddr:     wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()   || '') : '',
+                                    shipping:    totals.shipping,
+                                    cart:        cart.map(item => ({
+                                        name:     item.name,
+                                        code:     item.code,
+                                        quantity: item.quantity,
+                                        price:    item.price
+                                    }))
+                                };
+
+                                const response = await fetch(PAYNOW_INIT_URL, {
+                                    method:  'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ method: 'addOrder', parameters: orderPayload })
+                                    body:    JSON.stringify({ amount: amountGr, orderData })
                                 });
                                 const result = await response.json();
 
-                                if (result.status === 'SUCCESS' && result.order_id) {
-                                    // Sukces
-                                    successEl.innerHTML = '✅ Zamówienie #' + result.order_id + ' zostało złożone! Otrzymasz e-mail z potwierdzeniem.';
+                                if (result.redirectUrl) {
+                                    // Pokaż komunikat i przekieruj do bramki płatności
+                                    successEl.innerHTML = `
+                                      <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;color:#15803d;font-weight:600;font-size:.9rem;">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg>
+                                        Formularz zapisany! Przekierowuję do bezpiecznej płatności PayNow...
+                                      </div>`;
                                     successEl.classList.remove('hidden');
                                     document.getElementById('orderFormFields').style.opacity = '0.4';
                                     document.getElementById('orderFormFields').style.pointerEvents = 'none';
-                                    submitOrderBtn.style.display = 'none';
-                                    // Wyczyść koszyk po sukcesie
-                                    setTimeout(() => {
-                                        cart.length = 0;
-                                        updateCartDisplay();
-                                        closeCartSummaryModal();
-                                    }, 4000);
+
+                                    // Przekierowanie do bramki PayNow po chwili
+                                    setTimeout(() => { window.location.href = result.redirectUrl; }, 1200);
+
                                 } else {
-                                    throw new Error(result.error_message || 'Nieznany błąd BaseLinker');
+                                    throw new Error(result.error || 'Nie można uruchomić płatności');
                                 }
+
                             } catch (err) {
                                 submitOrderBtn.disabled = false;
-                                submitLabel.textContent = 'Złóż zamówienie';
-                                errEl.textContent = 'Błąd wysyłki: ' + err.message + '. Spróbuj ponownie lub skontaktuj się z nami.';
+                                submitLabel.textContent = 'Złóż zamówienie i zapłać';
+                                errEl.textContent = 'Błąd: ' + err.message + '. Spróbuj ponownie lub skontaktuj się z nami.';
                                 errEl.classList.remove('hidden');
-                                console.error('BaseLinker error:', err);
+                                console.error('PayNow init error:', err);
                             }
                         });
                     }
-                    // === KONIEC BASELINKER ===
+                    // === KONIEC NOWEGO FLOW PAYNOW ===
                 } else { console.error("Nie znaleziono elementów nowego modala podsumowania koszyka."); }
 
                 if (shelfTypeSelect) { shelfTypeSelect.value = 'standing'; shelfTypeSelect.dispatchEvent(new Event('change', { bubbles: true })); }
@@ -9562,10 +9514,8 @@ function addMugShelfCompartmentWidthArrow(group, widthNum, width, depth, thickne
     // Calculate compartment width
     const innerWidth = width - 2 * thickness;
     let compartmentWidth;
-    if (widthNum == 84) {
-        compartmentWidth = 1.25;
-    } else {
-        const numDividers = (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0);
+    {
+        const numDividers = (widthNum == 84) ? 3 : (widthNum == 60) ? 3 : ((widthNum == 44) ? 2 : 0);
         if (numDividers === 0) return;
         const dividerSpacing = innerWidth / (numDividers + 1);
         compartmentWidth = dividerSpacing - thickness;
@@ -10020,6 +9970,35 @@ function toggleInvoiceSection() {
     </div>
   </div>
 </footer>
+
+<!-- ═══════════════════════════════════════════════
+     PAYNOW — obsługa powrotu po płatności
+═══════════════════════════════════════════════ -->
+<script>
+// Animacja spinnera
+(function(){
+  const s = document.createElement('style');
+  s.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
+
+// Baner po powrocie z PayNow
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;background:#16a34a;color:#fff;padding:13px 24px;border-radius:12px;font-weight:700;font-size:.92rem;box-shadow:0 4px 24px rgba(22,163,74,.45);display:flex;align-items:center;gap:10px;white-space:nowrap;';
+    banner.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/></svg> Płatność zakończona! Zamówienie zostało przyjęte. Dziękujemy!`;
+    document.body.appendChild(banner);
+    setTimeout(() => {
+      banner.style.transition = 'opacity 0.6s';
+      banner.style.opacity = '0';
+      setTimeout(() => banner.remove(), 700);
+    }, 6000);
+    history.replaceState({}, '', window.location.pathname);
+  }
+})();
+</script>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 function otworzKontakt(){var m=document.getElementById('kontaktModal');m.style.display='flex';document.body.style.overflow='hidden';}
