@@ -7867,6 +7867,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                     invPostCode: wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim()  || '') : '',
                                     invAddr:     wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()   || '') : '',
                                     shipping:    totals.shipping,
+                                    discount:    totals.totalDiscount || 0,
                                     cart:        cart.map(item => ({
                                         name:     item.name,
                                         code:     item.code,
@@ -7961,6 +7962,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                     street, postCode, city, notes, orderCode,
                                     wantInvoice: false,
                                     shipping: totals.shipping,
+                                    discount: totals.totalDiscount || 0,
                                     cart: cart.map(item => ({
                                         name:     item.name,
                                         code:     item.code,
@@ -7968,7 +7970,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
                                         price:    item.price,
                                         snapshot: item.snapshot || ''
                                     })),
-                                    _testMode: true  // Flaga testowa dla backendu
+                                    _testMode: true
                                 };
 
                                 // Wywołaj nowy endpoint testowy — pełny flow bez płatności
