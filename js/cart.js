@@ -19,8 +19,7 @@
 // ============================================================
 
 // ---- KONFIGURACJA ----
-// Ustaw adres swojego backendu Railway (bez końcowego /):
-const BACKEND_URL = 'https://TWOJ-BACKEND.up.railway.app';
+const BACKEND_URL = 'https://polki-backend-production.up.railway.app';
 const SHIPPING_PER_ITEM = 19; // Kurier DPD — 19 zł za każdą półkę
 
 // ---- STAN KOSZYKA (globalny, używany też poza cart.js — np. przy
@@ -481,7 +480,7 @@ function closeCartSummaryModal() {
     }
 }
 
-// ---- WYSYŁKA ZAMÓWIENIA DO BACKENDU (Przelewy24) ----
+// ---- WYSYŁKA ZAMÓWIENIA DO BACKENDU (PayNow) ----
 async function submitOrder() {
     const firstName = document.getElementById('orderFirstName')?.value.trim();
     const lastName  = document.getElementById('orderLastName')?.value.trim();
@@ -534,37 +533,35 @@ async function submitOrder() {
     if (submitLabel) submitLabel.innerHTML = `<svg style="width:16px;height:16px;animation:spin 1s linear infinite;vertical-align:middle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/><path d="M12 2a10 10 0 0110 10" stroke="white" stroke-width="3" stroke-linecap="round"/></svg> Przekierowuję do płatności...`;
 
     try {
-        const customer = {
-            fullName: `${firstName} ${lastName}`,
-            email,
-            phone,
-            address: `${street}, ${postCode} ${city}`,
-            notes,
+        const amountGr = Math.round(totals.total * 100); // w groszach
+
+        const orderData = {
+            firstName, lastName, email, phone,
+            street, postCode, city, notes,
+            orderCode,
             wantInvoice,
             invCompany:  wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim()  || '') : '',
             invNip:      wantInvoice ? (document.getElementById('invoiceNip')?.value.trim()       || '') : '',
             invPostCode: wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim()  || '') : '',
             invAddr:     wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()   || '') : '',
+            shipping:    totals.shipping,
+            discount:    totals.totalDiscount || 0,
+            cart: cart.map(item => ({
+                name:      item.name,
+                code:      item.code,
+                quantity:  item.quantity,
+                price:     item.price,
+                summary:   item.summary || '',
+                sideColor: item.sideColor || '',
+                shelfColor: item.shelfColor || '',
+                snapshot:  item.snapshot || ''
+            }))
         };
-        const cartPayload = cart.map(item => ({
-            name:     item.name,
-            code:     item.code,
-            quantity: item.quantity,
-            price:    item.price,
-            summary:  item.summary,
-            sideColor: item.sideColor,
-            shelfColor: item.shelfColor,
-            snapshot: item.snapshot || ''
-        }));
 
-        const response = await fetch(BACKEND_URL + '/api/create-order', {
+        const response = await fetch(BACKEND_URL + '/api/paynow-init', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                customer,
-                cart: cartPayload,
-                totals: { total: totals.total, shipping: totals.shipping, discount: totals.totalDiscount }
-            })
+            body: JSON.stringify({ amount: amountGr, orderData })
         });
         const result = await response.json();
 
