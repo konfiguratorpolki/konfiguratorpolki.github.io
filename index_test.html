@@ -1151,15 +1151,16 @@
         }
         setTimeout(replaceSubmitBtn, 800);
 
-        // Mockowa wersja submitOrder
-        function mockSubmitOrder() {
-            var errEl  = document.getElementById('orderFormError');
-            var submitBtn   = document.getElementById('submitOrderBtn');
+        // Testowa wersja submitOrder — wywołuje /api/test-order (BEZ płatności)
+        // Zamówienie trafia do BaseLinker i wysyłany jest email, ale nie ma przekierowania do PayNow
+        async function mockSubmitOrder() {
+            var errEl     = document.getElementById('orderFormError');
+            var submitBtn = document.getElementById('submitOrderBtn');
             var submitLabel = document.getElementById('submitOrderBtnLabel');
-            var successEl   = document.getElementById('orderSuccessMsg');
-            var formFields  = document.getElementById('orderFormFields');
+            var successEl = document.getElementById('orderSuccessMsg');
+            var formFields = document.getElementById('orderFormFields');
 
-            // Prosta walidacja
+            // Walidacja — identyczna jak w cart.js submitOrder
             var firstName = document.getElementById('orderFirstName')?.value.trim();
             var lastName  = document.getElementById('orderLastName')?.value.trim();
             var email     = document.getElementById('orderEmail')?.value.trim();
@@ -1167,6 +1168,7 @@
             var street    = document.getElementById('orderStreet')?.value.trim();
             var postCode  = document.getElementById('orderPostCode')?.value.trim();
             var city      = document.getElementById('orderCity')?.value.trim();
+            var notes     = document.getElementById('orderNotes')?.value.trim() || '';
             var missing   = [];
             if (!firstName) missing.push('Imię');
             if (!lastName)  missing.push('Nazwisko');
@@ -1175,27 +1177,81 @@
             if (!street)    missing.push('Ulica');
             if (!postCode)  missing.push('Kod pocztowy');
             if (!city)      missing.push('Miasto');
+            var invoiceFieldsEl = document.getElementById('invoiceFields');
+            var wantInvoice = invoiceFieldsEl && invoiceFieldsEl.style.display !== 'none';
+            if (wantInvoice) {
+                if (!document.getElementById('invoiceCompany')?.value.trim()) missing.push('Nazwa firmy');
+                if (!document.getElementById('invoiceNip')?.value.trim())     missing.push('NIP');
+                if (!document.getElementById('invoicePostCode')?.value.trim()) missing.push('Kod pocztowy firmy');
+                if (!document.getElementById('invoiceAddress')?.value.trim()) missing.push('Adres firmy');
+            }
             if (missing.length > 0) {
-                if (errEl) { errEl.textContent = 'Uzupełnij: ' + missing.join(', '); errEl.classList.remove('hidden'); }
+                if (errEl) { errEl.textContent = 'Uzupełnij: ' + missing.join(', '); errEl.classList.remove('hidden'); errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
                 return;
             }
             if (errEl) errEl.classList.add('hidden');
 
-            // Symuluj ładowanie
+            // Zablokuj przycisk i pokaż spinner
             if (submitBtn) submitBtn.disabled = true;
-            if (submitLabel) submitLabel.innerHTML = '<svg style="width:16px;height:16px;animation:spin 1s linear infinite;vertical-align:middle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/><path d="M12 2a10 10 0 0110 10" stroke="white" stroke-width="3" stroke-linecap="round"/></svg> Przetwarzam (TEST)...';
+            if (submitLabel) submitLabel.innerHTML = '<svg style="width:16px;height:16px;animation:spin 1s linear infinite;vertical-align:middle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3"/><path d="M12 2a10 10 0 0110 10" stroke="white" stroke-width="3" stroke-linecap="round"/></svg> Wysyłam do BaseLinker (TEST)...';
 
-            setTimeout(function() {
-                if (successEl) {
-                    successEl.innerHTML = '<div style="padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;color:#15803d;font-weight:600;font-size:.9rem;">✅ [TEST] Zamówienie zatwierdzone! Przekierowuję...</div>';
-                    successEl.classList.remove('hidden');
+            try {
+                // Oblicz kwotę (taka sama logika jak calculateCartTotal w cart.js)
+                var totals = (typeof calculateCartTotal === 'function') ? calculateCartTotal() : { total: 0, shipping: 0, totalDiscount: 0 };
+                var amountGr = Math.round(totals.total * 100);
+                var orderCode = document.getElementById('cartSummaryAllCodes')?.value || '';
+
+                var orderData = {
+                    firstName, lastName, email, phone,
+                    street, postCode, city, notes,
+                    orderCode,
+                    wantInvoice,
+                    invCompany:  wantInvoice ? (document.getElementById('invoiceCompany')?.value.trim()  || '') : '',
+                    invNip:      wantInvoice ? (document.getElementById('invoiceNip')?.value.trim()      || '') : '',
+                    invPostCode: wantInvoice ? (document.getElementById('invoicePostCode')?.value.trim() || '') : '',
+                    invAddr:     wantInvoice ? (document.getElementById('invoiceAddress')?.value.trim()  || '') : '',
+                    shipping: totals.shipping || 0,
+                    discount: totals.totalDiscount || 0,
+                    cart: (typeof cart !== 'undefined' ? cart : []).map(function(item) {
+                        return {
+                            name: item.name, code: item.code, quantity: item.quantity,
+                            price: item.price, summary: item.summary || '',
+                            sideColor: item.sideColor || '', shelfColor: item.shelfColor || '',
+                            snapshot: item.snapshot || ''
+                        };
+                    })
+                };
+
+                // Wywołaj /api/test-order — BEZ PŁATNOŚCI, ale z zapisem do BaseLinker + email
+                var response = await fetch('https://polki-backend-production.up.railway.app/api/test-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: amountGr, orderData })
+                });
+                var result = await response.json();
+
+                if (result.success) {
+                    if (successEl) {
+                        successEl.innerHTML = '<div style="padding:12px 14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;color:#15803d;font-weight:600;font-size:.9rem;">✅ [TEST] Zamówienie #' + (result.baselinker_id || result.order_uuid || '') + ' wysłane do BaseLinker! Przekierowuję...</div>';
+                        successEl.classList.remove('hidden');
+                    }
+                    if (formFields) { formFields.style.opacity = '0.4'; formFields.style.pointerEvents = 'none'; }
+                    setTimeout(function() {
+                        window.location.href = 'thank-you.html?session=' + encodeURIComponent(result.order_uuid || 'TEST-' + Date.now());
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Nieznany błąd backendu');
                 }
-                if (formFields) { formFields.style.opacity = '0.4'; formFields.style.pointerEvents = 'none'; }
-                setTimeout(function() {
-                    window.location.href = 'thank-you.html?session=TEST-' + Date.now();
-                }, 1200);
-            }, 800);
-        };
+            } catch(err) {
+                if (submitBtn) submitBtn.disabled = false;
+                if (submitLabel) submitLabel.textContent = 'Złóż zamówienie i zapłać';
+                if (errEl) {
+                    errEl.textContent = '❌ Błąd: ' + err.message;
+                    errEl.classList.remove('hidden');
+                }
+                console.error('🧪 test-order błąd:', err);
+            }
+        }
 
         console.log('🧪 Tryb testowy aktywny — submitOrder zostanie podmieniony po 800ms');
 })();
