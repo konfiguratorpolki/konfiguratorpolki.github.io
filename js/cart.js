@@ -353,49 +353,6 @@ function updateCartDisplay() {
     previousCartItemCount = totalItems;
 }
 
-// ---- SPRAWDZANIE CZY SEKCJA KODÓW JEST WIDOCZNA (scroll w modalu) ----
-function checkCodesVisibility() {
-    const modalBody = document.querySelector('#cartSummaryModal .modal-body');
-    const codesSection = document.getElementById('codesSection');
-    const scrollToBtn = document.getElementById('scrollToCodesBtn');
-    if (!modalBody || !codesSection || !scrollToBtn) return;
-    const modalRect = modalBody.getBoundingClientRect();
-    const codesRect = codesSection.getBoundingClientRect();
-    if (codesRect.bottom > modalRect.bottom + 5) {
-        scrollToBtn.classList.add('visible');
-    } else {
-        scrollToBtn.classList.remove('visible');
-    }
-}
-
-// ---- ANIMACJA "WPISYWANIA" KODÓW ZAMÓWIEŃ ----
-function animateCodeTyping(fullText) {
-    const textarea = document.getElementById('cartSummaryAllCodes');
-    const displayEl = document.getElementById('codeDisplayText');
-    const cursor = document.getElementById('typingCursor');
-    const badge = document.getElementById('codeReadyBadge');
-    if (!displayEl || !cursor) return;
-    if (textarea) textarea.value = fullText;
-    displayEl.textContent = '';
-    if (badge) { badge.style.display = 'none'; }
-    cursor.style.display = 'inline-block';
-    const chars = fullText.split('');
-    let i = 0;
-    const typingSpeed = 28;
-    function type() {
-        if (i < chars.length) {
-            displayEl.textContent += chars[i];
-            i++;
-            setTimeout(type, typingSpeed);
-        } else {
-            cursor.style.display = 'none';
-            if (badge) { badge.style.display = 'flex'; }
-            checkCodesVisibility();
-        }
-    }
-    type();
-}
-
 // ---- PRZEŁĄCZANIE SEKCJI FAKTURY ----
 function toggleInvoiceSection() {
     const fields = document.getElementById('invoiceFields');
