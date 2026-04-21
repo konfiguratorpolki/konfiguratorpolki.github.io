@@ -876,18 +876,9 @@ function shiftCanvasForHeight() {
     if (!renderer) return;
     const canvas = renderer.domElement;
     if (!canvas) return;
-    if (window.innerWidth >= 768) {
-        canvas.style.transform = '';
-        return;
-    }
-    const h = parseInt(heightSelect && heightSelect.value) || 60;
-    if (h >= 80) {
-        canvas.style.transform = 'translateY(18%)';
-    } else if (h >= 60) {
-        canvas.style.transform = 'translateY(8%)';
-    } else {
-        canvas.style.transform = '';
-    }
+    // Wyłączamy CSS translateY — wyśrodkowanie przez controls.target
+    canvas.style.transition = '';
+    canvas.style.transform = '';
 }
 function fitCameraToShelf() {
     if (!camera || !renderer || window.innerWidth >= 768) return;
@@ -906,6 +897,12 @@ function fitCameraToShelf() {
 }
    function rebuildAndAnimateIn(config, withRotationAnimation = true) {
 
+      // Ustaw przesunięcie canvas od razu (przed animacją) — bez opóźnienia
+      if (typeof shiftCanvasForHeight === 'function') {
+          if (renderer && renderer.domElement) renderer.domElement.style.transition = '';
+          shiftCanvasForHeight();
+      }
+
       // +++ POCZĄTEK PRZENIESIONEGO KODU +++
       // 1. Natychmiast po wywołaniu funkcji, ustawiamy kamerę w docelowej pozycji.
       if (camera && controls) {
@@ -917,7 +914,8 @@ function fitCameraToShelf() {
           const _cz = _isWide84 ? 9.5 : (_isMobile ? (_h >= 80 ? 11 : 9) : (_h >= 80 ? 10 : 7));
           const _cx = _isWide84 ? 0.0001 : -4;
           const _cy = 0.5;
-          const _ct = 0; // środek modelu (model jest przy y=0)
+          // Target kamery — lekka korekta w dół żeby wyśrodkować półkę na mobile
+          const _ct = _isMobile ? (_h >= 80 ? 0.5 : (_h >= 60 ? 0.8 : 1.0)) : 0;
           gsap.to(camera.position, {
               x: _cx, y: _cy, z: _cz,
               duration: 0.4,
@@ -958,7 +956,8 @@ function fitCameraToShelf() {
                         const _isWide84 = _wCur === 84;
                         const _z = _isWide84 ? 9.5 : (_h >= 80 ? 11 : _h >= 60 ? 9 : 8);
                         const _x = _isWide84 ? 0.0001 : -3;
-                        controls.target.set(0, 0, 0);
+                        const _tEnd = _h >= 80 ? 0.5 : (_h >= 60 ? 0.8 : 1.0);
+                        controls.target.set(0, _tEnd, 0);
                         camera.position.set(_x, 0.5, _z);
                         controls.update();
                         if (_isWide84) {
