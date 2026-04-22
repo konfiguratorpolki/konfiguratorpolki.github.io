@@ -1,3 +1,5 @@
+// Zaktualizowano ceny: 22.04.2026, 13:28:31
+// Zaktualizowano ceny: 22.04.2026, 13:28:27
 // Zaktualizowano ceny: 10.04.2026, 13:34:11
 // Zaktualizowano: 10.04.2026, 13:32:48 — edytowano: "wzór1"
 // Zaktualizowano ceny: 10.04.2026, 13:32:15
@@ -1009,7 +1011,7 @@ const pricing = {
         "40": {
             "10": {
                 "1": 125,
-                "2": 150
+                "2": 20
             },
             "15": {
                 "1": 225,
