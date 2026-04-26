@@ -34,7 +34,8 @@
         let desktopDividerDimensionsInfo;
         let viewOrderCodeInput, orderDetailsModalOverlay, orderDetailsModal, modalCloseButton, modalOrderCodeSpan, modalOrderSummaryP;
         let priceAndActionsContainer, priceHint, addToCartBtn;
-        let imageLightbox, lightboxImage, lightboxCloseBtn;
+        // Lightbox handled by PhotoSwipe — no DOM refs needed
+        let imageLightbox = null, lightboxImage = null, lightboxCloseBtn = null;
         
         // NOWE ZMIENNE
         let visualDetailsModalOverlay, visualDetailsModal, visualDetailsModalCloseBtn, visualDetailsLoader, visualDetailsContent, visualDetailsError, visualDetailsOrderCode, visualDetailsSnapshot, visualDetailsSpecsList, printVisualDetailsBtn;
@@ -3854,246 +3855,59 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
         function scrollToElement(elementId, blockPosition = 'start', clickedButton = null, inlinePosition = 'nearest') { const element = document.getElementById(elementId); if (element) { let targetElement = element.closest('.p-6.shadow.rounded-lg') || element.closest('.w-full.max-w-lg') || element; targetElement.scrollIntoView({ behavior: 'smooth', block: blockPosition, inline: inlinePosition }); } else { console.error('Nie znaleziono elementu o ID (scrollToElement):', elementId); } }
         function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
         /* ══════════════════════════════════════════════
-           LIGHTBOX — slider z swipe + momentum
+           LIGHTBOX — PhotoSwipe v5 (pinch-zoom, double-tap, swipe-to-close)
         ══════════════════════════════════════════════ */
-        let _lb = {
-            photos: [], idx: 0,
-            track: null, viewport: null,
-            strip: null, counter: null,
-            prevBtn: null, nextBtn: null,
-            slideW: 0,
-            counterTimer: null,
-            scrollTimer: null,
-            preventScroll: null   // touchmove handler ref
-        };
-
-        function _lbSlideW() {
-            const w = _lb.viewport ? _lb.viewport.offsetWidth : 0;
-            return w > 10 ? w : Math.min(window.innerWidth * 0.92, 820);
+        // Probe natural image dimensions in parallel (PhotoSwipe needs them for zoom math)
+        function _pswpProbeSizes(srcs) {
+            return Promise.all(srcs.map(src => new Promise(resolve => {
+                const im = new Image();
+                im.onload  = () => resolve({ src, width: im.naturalWidth || 1600, height: im.naturalHeight || 1200 });
+                im.onerror = () => resolve({ src, width: 1600, height: 1200 });
+                im.src = src;
+            })));
         }
 
-        function _lbUpdateUI(idx) {
-            if (!_lb.strip) return;
-            _lb.strip.querySelectorAll('.lb-thumb').forEach((t, ti) => t.classList.toggle('active', ti === idx));
-            _lb.prevBtn.classList.toggle('lb-hidden', idx === 0);
-            _lb.nextBtn.classList.toggle('lb-hidden', idx === _lb.photos.length - 1);
-            if (_lb.photos.length > 1) {
-                _lb.counter.textContent = `${idx + 1} / ${_lb.photos.length}`;
-                _lb.counter.classList.add('lb-visible');
-                clearTimeout(_lb.counterTimer);
-                _lb.counterTimer = setTimeout(() => _lb.counter.classList.remove('lb-visible'), 1800);
-            }
-        }
-
-        function _lbGoTo(idx, animated) {
-            if (!_lb.photos.length) return;
-            idx = Math.max(0, Math.min(_lb.photos.length - 1, idx));
-            _lb.idx = idx;
-            const w = _lbSlideW();
-            if (animated) {
-                _lb.track.scrollTo({ left: idx * w, behavior: 'smooth' });
-            } else {
-                // Natychmiastowe — bez animacji (iOS safe)
-                const prev = _lb.track.style.scrollBehavior;
-                _lb.track.style.scrollBehavior = 'auto';
-                _lb.track.scrollLeft = idx * w;
-                _lb.track.style.scrollBehavior = prev;
-            }
-            _lbUpdateUI(idx);
-        }
-
-        function _lbBuild(photos, startIdx) {
-            const track = document.getElementById('lb-track');
-            track.innerHTML = '';
-            const w = _lbSlideW();
-            photos.forEach(src => {
-                const slide = document.createElement('div');
-                slide.className = 'lb-slide';
-                slide.style.width = w + 'px';
-                const img = document.createElement('img');
-                img.src = src; img.loading = 'lazy';
-                img.draggable = false;
-                slide.appendChild(img);
-                track.appendChild(slide);
-            });
-            _lb.track = track;
-            _lb.slideW = w;
-
-            // Aktualizuj idx po natywnym swipe (iOS scroll-snap)
-            const _onScrollDone = () => {
-                const newIdx = Math.round(track.scrollLeft / w);
-                if (newIdx !== _lb.idx) {
-                    _lb.idx = newIdx;
-                    _lbUpdateUI(newIdx);
-                }
-            };
-            if ('onscrollend' in window) {
-                track.addEventListener('scrollend', _onScrollDone, { passive: true });
-            } else {
-                track.addEventListener('scroll', () => {
-                    clearTimeout(_lb.scrollTimer);
-                    _lb.scrollTimer = setTimeout(_onScrollDone, 80);
-                }, { passive: true });
-            }
-        }
-
-        function _lbSetupStrip(photos, startIdx) {
-            const strip = document.getElementById('lb-strip');
-            strip.innerHTML = '';
-            if (photos.length > 1) {
-                photos.forEach((src, i) => {
-                    const th = document.createElement('button');
-                    th.className = 'lb-thumb' + (i === startIdx ? ' active' : '');
-                    th.setAttribute('aria-label', 'Zdjęcie ' + (i + 1));
-                    th.addEventListener('click', () => _lbGoTo(i, true));
-                    strip.appendChild(th);
+        function _pswpOpen(photos, startIdx) {
+            _pswpProbeSizes(photos).then(slides => {
+                const lightbox = new window.PhotoSwipeLightbox({
+                    dataSource: slides,
+                    pswpModule: window.PhotoSwipe,
+                    bgOpacity: 0.92,
+                    showHideAnimationType: 'fade',
+                    pinchToClose: true,
+                    closeOnVerticalDrag: true,
+                    initialZoomLevel: 'fit',
+                    secondaryZoomLevel: 2,
+                    maxZoomLevel: 4,
+                    wheelToZoom: true,
+                    zoom: true,
+                    counter: photos.length > 1,
+                    arrowKeys: true,
+                    loop: false,
+                    padding: { top: 20, bottom: 20, left: 0, right: 0 }
                 });
-            }
-            _lb.strip = strip;
+                // Self-destruct after close so each open is a fresh instance
+                lightbox.on('close', () => {
+                    setTimeout(() => { try { lightbox.destroy(); } catch(e) {} }, 350);
+                });
+                lightbox.init();
+                lightbox.loadAndOpen(startIdx);
+            });
         }
 
         function openLightbox(imageSrc, allPhotos) {
-            if (!imageLightbox) return;
-            const photos = (allPhotos && allPhotos.length) ? allPhotos : [imageSrc];
+            const photos   = (allPhotos && allPhotos.length) ? allPhotos : [imageSrc];
             const startIdx = Math.max(0, photos.indexOf(imageSrc));
-
-            _lb.photos   = photos;
-            _lb.idx      = startIdx;
-            _lb.viewport = document.getElementById('lb-viewport');
-            _lb.counter  = document.getElementById('lb-counter');
-            _lb.prevBtn  = document.getElementById('lb-prev');
-            _lb.nextBtn  = document.getElementById('lb-next');
-
-            // Efekt "odsunięcia sąsiadów" — aktywny kafel powiększa się, reszta cofa
-            const _srcTile = typeof imageSrc === 'string'
-                ? Array.from(document.querySelectorAll('.gallery-image-container img')).find(im => im.src.includes(imageSrc.split('/').pop()))?.closest('.gallery-tile')
-                : null;
-            document.querySelectorAll('.gallery-tile').forEach(t => {
-                t.style.transition = 'transform 0.32s cubic-bezier(0.34,1.38,0.64,1), opacity 0.32s ease';
-                if (t === _srcTile) {
-                    t.style.transform = 'scale(1.04)';
-                } else {
-                    t.style.transform = 'scale(0.95)';
-                    t.style.opacity = '0.7';
-                }
-            });
-
-            // pokaż lightbox z animacją
-            imageLightbox.classList.remove('hidden');
-            imageLightbox.classList.remove('opacity-0');
-            imageLightbox.classList.remove('lb-opening');
-            void imageLightbox.offsetWidth; // reflow
-            imageLightbox.classList.add('lb-opening');
-            setTimeout(() => imageLightbox.classList.remove('lb-opening'), 400);
-
-            // Blokuj scroll tła (iOS-safe: position fixed + zapamiętaj pozycję)
-            const _savedScrollY = window.scrollY || window.pageYOffset;
-            document.body.dataset.lbScrollY = _savedScrollY;
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.width = '100%';
-            document.body.style.top = `-${_savedScrollY}px`;
-
-            // Zapobiegaj pionowemu scrollowi strony podczas swipe w lightboxie
-            if (_lb.preventScroll) imageLightbox.removeEventListener('touchmove', _lb.preventScroll);
-            _lb.preventScroll = e => {
-                // Pozwól natywny poziomy scroll na lb-track, blokuj resztę
-                if (!e.target.closest('#lb-track')) e.preventDefault();
-            };
-            imageLightbox.addEventListener('touchmove', _lb.preventScroll, { passive: false });
-
-            // po 1 klatce viewport ma już wymiary — buduj slajdy
-            requestAnimationFrame(() => {
-                _lbBuild(photos, startIdx);
-                _lbSetupStrip(photos, startIdx);
-                _lbGoTo(startIdx, false);
-            });
-        }
-
-        /* ── Swipe / drag handlers ── */
-        function _lbOnPointerDown(e) {
-            if (e.button && e.button !== 0) return;
-            _lb.dragging  = true;
-            _lb.dirLocked = null;
-            _lb.startX    = e.touches ? e.touches[0].clientX : e.clientX;
-            _lb.startY    = e.touches ? e.touches[0].clientY : e.clientY;
-            _lb.currentX  = 0;
-            _lb.lastX     = _lb.startX;
-            _lb.lastT     = Date.now();
-            _lb.velX      = 0;
-            _lb.track.classList.add('lb-no-transition');
-        }
-        function _lbOnPointerMove(e) {
-            if (!_lb.dragging) return;
-            const cx = e.touches ? e.touches[0].clientX : e.clientX;
-            const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            const dx = cx - _lb.startX;
-            const dy = cy - _lb.startY;
-            // lock direction on first move
-            if (!_lb.dirLocked) {
-                _lb.dirLocked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-            }
-            if (_lb.dirLocked === 'v') { _lb.dragging = false; return; }
-            e.preventDefault();
-            const now = Date.now();
-            const dt  = Math.max(now - _lb.lastT, 1);
-            _lb.velX  = (cx - _lb.lastX) / dt;
-            _lb.lastX = cx; _lb.lastT = now;
-            _lb.currentX = dx;
-            // rubber-band na kraocach
-            let offset = dx;
-            if ((_lb.idx === 0 && dx > 0) || (_lb.idx === _lb.photos.length - 1 && dx < 0)) {
-                offset = dx * 0.22;
-            }
-            const base = -_lb.idx * _lbSlideW();
-            _lb.track.style.transform = `translateX(${base + offset}px)`;
-        }
-        function _lbOnPointerUp() {
-            if (!_lb.dragging) return;
-            _lb.dragging = false;
-            _lb.track.classList.remove('lb-no-transition');
-            const w = _lbSlideW();
-            const threshold = w * 0.22;
-            const velThresh = 0.35; // px/ms
-            let next = _lb.idx;
-            if (_lb.currentX < -threshold || _lb.velX < -velThresh) next++;
-            else if (_lb.currentX > threshold || _lb.velX > velThresh) next--;
-            _lbGoTo(next, true);
-        }
-
-        /* ── Klawiatura ── */
-        function _lbOnKey(e) {
-            if (imageLightbox.classList.contains('hidden')) return;
-            if (e.key === 'ArrowRight') _lbGoTo(_lb.idx + 1, true);
-            if (e.key === 'ArrowLeft')  _lbGoTo(_lb.idx - 1, true);
-            if (e.key === 'Escape')     closeLightbox();
-        }
-
-        function closeLightbox() {
-            if (imageLightbox) {
-                imageLightbox.classList.add('hidden');
-                imageLightbox.classList.add('opacity-0');
-                imageLightbox.classList.remove('lb-opening');
-                // Przywróć kafle galerii
-                document.querySelectorAll('.gallery-tile').forEach(t => {
-                    t.style.transform = '';
-                    t.style.opacity = '';
-                    setTimeout(() => { t.style.transition = ''; }, 320);
-                });
-                // Przywróć scroll tła i pozycję strony
-                const _restoreY = parseInt(document.body.dataset.lbScrollY || '0');
-                document.body.style.overflow = '';
-                document.body.style.position = '';
-                document.body.style.width = '';
-                document.body.style.top = '';
-                window.scrollTo(0, _restoreY);
-                // Usuń touchmove blokadę
-                if (_lb.preventScroll) {
-                    imageLightbox.removeEventListener('touchmove', _lb.preventScroll);
-                    _lb.preventScroll = null;
-                }
+            if (window.PhotoSwipeLightbox && window.PhotoSwipe) {
+                _pswpOpen(photos, startIdx);
+            } else {
+                window.addEventListener('pswp-ready', () => _pswpOpen(photos, startIdx), { once: true });
             }
         }
+
+        // No-op stubs kept for any legacy call-sites elsewhere in the codebase.
+        function closeLightbox() { /* PhotoSwipe handles close internally */ }
+
         function initializeTabbedGallery() {
     if (!galleryTabsContainer || !galleryGridContainer || !galleryImageArea || !configuratorSection || !galleryPrevArrow || !galleryNextArrow) {
         console.error("Nie znaleziono wszystkich elementów galerii potrzebnych do inicjalizacji.");
@@ -5045,7 +4859,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
             mugShelfDividerIconsContainer = document.getElementById('mugShelfDividerIconsContainer'); dividerTooltip = document.getElementById('dividerTooltip'); addTopDividerBtn = document.getElementById('addTopDividerBtn'); addMiddleDividerBtn = document.getElementById('addMiddleDividerBtn'); addBottomDividerBtn = document.getElementById('addBottomDividerBtn'); mobileMugShelfMountPanel = document.getElementById('mobileMugShelfMountPanel'); mobileMountHangingStripBtn = document.getElementById('mobileMountHangingStripBtn'); mobileMountStandingStripBtn = document.getElementById('mobileMountStandingStripBtn');
             desktopDividerDimensionsInfo = document.getElementById('desktopDividerDimensionsInfo');
             viewOrderCodeInput = null; // input usuniety 
-            imageLightbox = document.getElementById('imageLightbox'); lightboxImage = null; lightboxCloseBtn = document.getElementById('lightboxClose');
+            // imageLightbox / lightboxClose nie istnieją już w DOM — PhotoSwipe sam zarządza warstwą
             priceAndActionsContainer = document.getElementById('priceAndActionsContainer');
             priceHint = document.getElementById('priceHint');
             addToCartBtn = document.getElementById('addToCartBtn');
@@ -5237,37 +5051,8 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
 
                 if (window.innerWidth < 768) { const reviewBlock = document.getElementById('customerReview')?.parentElement; const summarySection = document.querySelector('.w-full.md\\:w-1\\/3.order-3'); if (reviewBlock && summarySection && reviewBlock.parentElement !== summarySection) { summarySection.appendChild(reviewBlock); } }
                 const mainConfigSection = document.getElementById('configuratorSection'); if (mainConfigSection) { mainConfigSection.addEventListener('change', function(event) { if (event.target.tagName === 'SELECT' && event.target.closest('.p-6.shadow.rounded-lg, .w-full.max-w-lg')) { const parentSection = event.target.closest('.section-highlight-persistent'); if (parentSection) { parentSection.classList.remove('section-highlight-persistent'); } } }); } else { console.error("Nie znaleziono głównego kontenera konfiguracji (#configuratorSection) do nasłuchiwania zmian."); }
-                if (lightboxCloseBtn) { lightboxCloseBtn.addEventListener('click', closeLightbox); }
-                if (imageLightbox) {
-                    // Kliknięcie w tło zamyka lightbox
-                    imageLightbox.addEventListener('click', function(event) { if (event.target === imageLightbox) { closeLightbox(); } });
-                    // Strzałki klawiatury
-                    const lbPrev = document.getElementById('lb-prev');
-                    const lbNext = document.getElementById('lb-next');
-                    if (lbPrev) lbPrev.addEventListener('click', e => { e.stopPropagation(); _lbGoTo(_lb.idx - 1, true); });
-                    if (lbNext) lbNext.addEventListener('click', e => { e.stopPropagation(); _lbGoTo(_lb.idx + 1, true); });
-                    // Drag myszą (desktop) — natywny scroll track
-                    const track = document.getElementById('lb-track');
-                    if (track) {
-                        let _md = { active: false, startX: 0, scrollStart: 0 };
-                        track.addEventListener('mousedown', e => {
-                            _md.active = true; _md.startX = e.clientX;
-                            _md.scrollStart = track.scrollLeft;
-                            track.style.cursor = 'grabbing'; e.preventDefault();
-                        });
-                        window.addEventListener('mousemove', e => {
-                            if (!_md.active) return;
-                            track.scrollLeft = _md.scrollStart - (e.clientX - _md.startX);
-                        });
-                        window.addEventListener('mouseup', () => {
-                            if (!_md.active) return;
-                            _md.active = false; track.style.cursor = 'grab';
-                        });
-                        track.style.cursor = 'grab';
-                    }
-                }
-                document.addEventListener('keydown', _lbOnKey);
-                
+                // Lightbox jest teraz obsługiwany przez PhotoSwipe v5 — żadne ręczne listenery nie są potrzebne.
+
 const setupMobileModularButton = (btn, checkboxId) => {
                     if (!btn) return;
                     btn.addEventListener('click', () => {
