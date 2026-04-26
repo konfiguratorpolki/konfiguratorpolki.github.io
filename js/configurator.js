@@ -3895,14 +3895,57 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
             });
         }
 
+        // Bardzo prosty fullscreen viewer — używany tylko gdy PhotoSwipe nie załaduje się
+        // (np. moduł zablokowany przez sieć). Bez pinch-zoom, ale przynajmniej user widzi zdjęcie.
+        function _basicFullscreenViewer(photos, startIdx) {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:fixed;inset:0;background:#000;z-index:99999;display:flex;align-items:center;justify-content:center;touch-action:none;';
+            const im = document.createElement('img');
+            im.src = photos[startIdx] || photos[0];
+            im.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;';
+            const close = document.createElement('button');
+            close.textContent = '×';
+            close.setAttribute('aria-label', 'Zamknij');
+            close.style.cssText = 'position:absolute;top:14px;right:14px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,0.18);color:#fff;font-size:26px;line-height:44px;cursor:pointer;';
+            close.onclick = () => wrap.remove();
+            wrap.onclick = (e) => { if (e.target === wrap) wrap.remove(); };
+            wrap.appendChild(im);
+            wrap.appendChild(close);
+            document.body.appendChild(wrap);
+        }
+
         function openLightbox(imageSrc, allPhotos) {
             const photos   = (allPhotos && allPhotos.length) ? allPhotos : [imageSrc];
             const startIdx = Math.max(0, photos.indexOf(imageSrc));
-            if (window.PhotoSwipeLightbox && window.PhotoSwipe) {
+
+            // 1) PhotoSwipe już gotowy — otwieramy od razu
+            if (window.__pswpReady && window.PhotoSwipeLightbox && window.PhotoSwipe) {
                 _pswpOpen(photos, startIdx);
-            } else {
-                window.addEventListener('pswp-ready', () => _pswpOpen(photos, startIdx), { once: true });
+                return;
             }
+            // 2) PhotoSwipe nie wczytał się w ogóle — fallback
+            if (window.__pswpFailed) {
+                _basicFullscreenViewer(photos, startIdx);
+                return;
+            }
+            // 3) Jeszcze ładuje się — pokaż "Ładowanie…" i czekaj max 4 s
+            const toast = document.createElement('div');
+            toast.textContent = 'Ładowanie…';
+            toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.78);color:#fff;padding:12px 22px;border-radius:999px;font-size:14px;z-index:99999;pointer-events:none;';
+            document.body.appendChild(toast);
+
+            let done = false;
+            const finish = (action) => {
+                if (done) return;
+                done = true;
+                toast.remove();
+                action();
+            };
+            const onReady  = () => finish(() => _pswpOpen(photos, startIdx));
+            const onFailed = () => finish(() => _basicFullscreenViewer(photos, startIdx));
+            window.addEventListener('pswp-ready',  onReady,  { once: true });
+            window.addEventListener('pswp-failed', onFailed, { once: true });
+            setTimeout(onFailed, 4000); // watchdog
         }
 
         // No-op stubs kept for any legacy call-sites elsewhere in the codebase.
@@ -7303,4 +7346,3 @@ function addShelfDimensionArrows(group, internalShelves, bottomPanel, topPanel, 
     // Czekaj na init3D
     window.addEventListener('load', () => setTimeout(attachVerticalTouch, 800));
 })();
-
