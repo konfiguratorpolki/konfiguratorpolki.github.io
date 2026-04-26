@@ -30,6 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.css" />
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/pfx-premium.css">
 </head>
@@ -147,31 +148,9 @@
         </div>
     </div>
 
-    <div id="imageLightbox" class="fixed inset-0 bg-black bg-opacity-85 flex items-center justify-center z-[1060] hidden transition-opacity duration-300 ease-in-out">
-        <!-- Pulsante X — fisso in alto a destra, mai tagliato -->
-        <button id="lightboxClose" aria-label="Zamknij powiększenie">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" width="20" height="20">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-        <div class="flex flex-col items-center gap-3">
-            <!-- slider viewport -->
-            <div id="lb-viewport">
-                <div id="lb-track"></div>
-                <!-- strzałki -->
-                <button id="lb-prev" class="lb-arrow" aria-label="Poprzednie">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <button id="lb-next" class="lb-arrow" aria-label="Następne">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-                <div id="lb-counter"></div>
-            </div>
-            <!-- miniatury -->
-            <div id="lb-strip" class="lb-strip"></div>
-        </div>
-    </div>
-    
+    <!-- Lightbox: obsługiwany przez PhotoSwipe v5 (pinch-zoom, double-tap, swipe-to-close) -->
+
+
     <div id="visualDetailsModalOverlay" class="modal-overlay">
         <div id="visualDetailsModal" class="modal !max-w-2xl" role="dialog" aria-modal="true" aria-labelledby="visualDetailsModalTitle">
             <div class="modal-header">
@@ -1137,6 +1116,13 @@
 
 <script src="js/analytics.js"></script>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+<script type="module">
+  import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
+  import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
+  window.PhotoSwipeLightbox = PhotoSwipeLightbox;
+  window.PhotoSwipe = PhotoSwipe;
+  window.dispatchEvent(new Event('pswp-ready'));
+</script>
 <script src="js/configurator.js"></script>
     
 <div id="snapZoom" style="position:fixed;z-index:9999;width:280px;height:280px;background:#f0f0f0;border-radius:14px;border:1px solid #e5e7eb;box-shadow:0 12px 40px rgba(0,0,0,.22);overflow:hidden;display:none;pointer-events:none;transition:opacity .18s ease,transform .18s ease;"><img id="snapZoomImg" src="" style="width:100%;height:100%;object-fit:contain;-webkit-user-select:none;user-select:none;pointer-events:none;-webkit-touch-callout:none;"></div>
