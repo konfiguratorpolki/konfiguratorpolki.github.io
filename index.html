@@ -1173,19 +1173,35 @@
 
 <script id="pfx-premium-logic" src="pfx-effects.js"></script>
 
-<!-- SEO TEXT BLOCK — subtelna stylizacja, widoczne dla użytkownika i indeksowalne przez Google -->
-<section style="background:#fafafa;border-top:1px solid #f3f4f6;padding:20px 24px 22px">
+<!-- SEO TEXT BLOCK — rozwijana zakładka "O nas", treść w DOM = indeksowalna przez Google -->
+<section style="background:#fafafa;border-top:1px solid #f3f4f6;">
   <div style="max-width:860px;margin:0 auto">
-    <h2 style="font-size:.78rem;font-weight:600;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em">O konfiguratorze</h2>
-    <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
-      Regaliki.pl to intuicyjny <strong style="color:#6b7280;font-weight:600">konfigurator półki 3D</strong>, dzięki któremu zaprojektujesz <strong style="color:#6b7280;font-weight:600">półkę wiszącą na wymiar</strong> bezpośrednio w przeglądarce — bez wizyty w sklepie i bez kontaktu z doradcą. Wybierz rodzaj półki, ustaw szerokość, wysokość i głębokość, dobierz kolor boków oraz półek wewnętrznych, a model 3D zaktualizuje się na żywo.
-    </p>
-    <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
-      Cena Twojej <strong style="color:#6b7280;font-weight:600">półki na wymiar</strong> pojawia się automatycznie po wybraniu wszystkich parametrów — bez ukrytych kosztów. Oferujemy płytę laminowaną gr. 1,8 cm w wielu kolorach, realizację w <strong style="color:#6b7280;font-weight:600">3–7 dni roboczych</strong> i dostawę kurierem DPD na terenie całej Polski.
-    </p>
-    <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0">
-      Skorzystaj z <strong style="color:#6b7280;font-weight:600">konfiguratora mebli online</strong> i zamów półkę skrojoną dokładnie pod Twoje wnętrze. Bezpieczna płatność przez Przelewy24 — BLIK, karta lub przelew.
-    </p>
+    <button
+      id="onas-toggle"
+      onclick="(function(){var c=document.getElementById('onas-content');var a=document.getElementById('onas-arrow');var open=c.style.maxHeight&&c.style.maxHeight!=='0px';c.style.maxHeight=open?'0px':c.scrollHeight+'px';c.style.opacity=open?'0':'1';a.style.transform=open?'rotate(0deg)':'rotate(180deg)';})()"
+      style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:none;border:none;cursor:pointer;gap:8px;text-align:left;"
+      aria-expanded="false"
+      aria-controls="onas-content"
+    >
+      <span style="font-size:.78rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;">O nas</span>
+      <svg id="onas-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .3s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div
+      id="onas-content"
+      style="max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease, opacity .3s ease;padding:0 24px;"
+    >
+      <div style="padding-bottom:18px;">
+        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
+          Regaliki.pl to intuicyjny <strong style="color:#6b7280;font-weight:600">konfigurator półki 3D</strong>, dzięki któremu zaprojektujesz <strong style="color:#6b7280;font-weight:600">półkę wiszącą na wymiar</strong> bezpośrednio w przeglądarce — bez wizyty w sklepie i bez kontaktu z doradcą. Wybierz rodzaj półki, ustaw szerokość, wysokość i głębokość, dobierz kolor boków oraz półek wewnętrznych, a model 3D zaktualizuje się na żywo.
+        </p>
+        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
+          Cena Twojej <strong style="color:#6b7280;font-weight:600">półki na wymiar</strong> pojawia się automatycznie po wybraniu wszystkich parametrów — bez ukrytych kosztów. Oferujemy płytę laminowaną gr. 1,8 cm w wielu kolorach, realizację w <strong style="color:#6b7280;font-weight:600">3–7 dni roboczych</strong> i dostawę kurierem DPD na terenie całej Polski.
+        </p>
+        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0">
+          Skorzystaj z <strong style="color:#6b7280;font-weight:600">konfiguratora mebli online</strong> i zamów półkę skrojoną dokładnie pod Twoje wnętrze. Bezpieczna płatność przez Przelewy24 — BLIK, karta lub przelew.
+        </p>
+      </div>
+    </div>
   </div>
 </section>
 
