@@ -30,7 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.css" />
+    <link rel="stylesheet" href="vendor/photoswipe/photoswipe.css" />
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/pfx-premium.css">
 </head>
@@ -1117,11 +1117,29 @@
 <script src="js/analytics.js"></script>
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <script type="module">
-  import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
-  import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
-  window.PhotoSwipeLightbox = PhotoSwipeLightbox;
-  window.PhotoSwipe = PhotoSwipe;
-  window.dispatchEvent(new Event('pswp-ready'));
+  // PhotoSwipe v5 — ładowane lokalnie (vendor/photoswipe/), żeby działało stabilnie na mobile
+  // bez zależności od zewnętrznych CDN (unpkg potrafi być wolne/blokowane przez sieci komórkowe).
+  // Async IIFE zamiast top-level await — kompatybilne z iOS Safari 11+.
+  (async () => {
+    try {
+      const [lbMod, psMod] = await Promise.all([
+        import('./vendor/photoswipe/photoswipe-lightbox.esm.js'),
+        import('./vendor/photoswipe/photoswipe.esm.js')
+      ]);
+      window.PhotoSwipeLightbox = lbMod.default;
+      window.PhotoSwipe = psMod.default;
+      window.__pswpReady = true;
+      window.dispatchEvent(new Event('pswp-ready'));
+    } catch (err) {
+      console.error('[PhotoSwipe] Nie udało się załadować modułu:', err);
+      window.__pswpFailed = true;
+      window.dispatchEvent(new Event('pswp-failed'));
+    }
+  })();
+</script>
+<script nomodule>
+  // Bardzo stara przeglądarka bez wsparcia ES modules — od razu fallback
+  window.__pswpFailed = true;
 </script>
 <script src="js/configurator.js"></script>
     
