@@ -817,6 +817,10 @@
   // ========= Delikatny klik dla zmian opcji (kolory, bez górnej/dolnej półki) =========
   function playClickSoft(){
     if (_customWidthDragLock) return; // cisza podczas suwania
+    // Haptic: miękki puls przy wyborze koloru / opcji
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(12); } catch(_) {}
+    }
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     try {
@@ -1109,6 +1113,15 @@
     // Zdejmij flagę po czasie dłuższym niż animacja
     clearTimeout(playCustomWidthSlider._blockTimer);
     playCustomWidthSlider._blockTimer = setTimeout(() => { _customWidthActive = false; }, 600);
+    // Haptic snap: krótki tik gdy slider trafia w landmark wartości (35/40/45/50/55)
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      const _vNow  = Math.round(val);
+      const _vPrev = (typeof _customWidthLastVal === 'number') ? Math.round(_customWidthLastVal) : null;
+      const _isLandmark = (_vNow % 5 === 0);
+      if (_isLandmark && _vNow !== _vPrev) {
+        try { navigator.vibrate(8); } catch(_) {}
+      }
+    }
     try {
       const now = ctx.currentTime;
       // Jedno miękkie "pyk" — krótka sinusoida z szybkim zanikiem
