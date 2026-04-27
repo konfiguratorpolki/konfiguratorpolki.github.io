@@ -4668,13 +4668,48 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
     }
 }
         function initializeReviews() { const reviews = [ '"Fantastyczna półeczka, przyszła od razu zmontowana i idealnie pasuje w wielu miejscach. Serdecznie polecam!"', '"Piękna, zgrabna półka. Solidnie wykonana, bez żadnych wad. Polecam!"', '"Bardzo ładna i funkcjonalna półka, świetnie zapakowana na czas transportu. Polecam!"', '"Super produkt – pięknie wykonany, idealnie pasuje do małych słoiczków z przyprawami w kuchni. Polecam!"', '"Ładna i solidna półka, starannie wykonana. Kolor świetnie wpasował się w meble. Polecam!"' ]; let currentReviewIndex = 0; const reviewDisplay = document.getElementById('customerReview'); function showNextReview() { if (!reviewDisplay) return; reviewDisplay.classList.remove('review-fade-enter-active'); setTimeout(() => { const reviewData = reviews[currentReviewIndex]; reviewDisplay.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-lime-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> ${reviewData}`; reviewDisplay.classList.add('review-fade-enter-active'); currentReviewIndex = (currentReviewIndex + 1) % reviews.length; }, 700); } if (reviewDisplay) { showNextReview(); setInterval(showNextReview, 6000); } }
-        function open3dPanel() { if (shelfContainer) { 
+        function open3dPanel() { if (shelfContainer) {
             // ── ANIMACJA: pokaż backdrop najpierw (fade-in), panel slajduje z delay dopiero po paru ms — wygląda bardziej "profesjonalnie"
             const _backdrop = document.getElementById('shelf3dBackdrop');
             if (_backdrop && window.innerWidth < 768) _backdrop.classList.add('active');
             // Haptic feedback (delikatna wibracja) na mobile — jeśli urządzenie wspiera
             if (window.innerWidth < 768 && typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate(10); } catch(_e) {}
+            }
+            // ── INTRO ROTATE: jednorazowy "wow swing" przy pierwszym otwarciu panelu w sesji
+            // Sygnalizuje "to jest 3D, możesz przeciągać". Wyłącza się przy pierwszej interakcji usera.
+            const _introKey = 'intro3dRotatePlayed';
+            if (window.innerWidth < 768 && !sessionStorage.getItem(_introKey)) {
+                sessionStorage.setItem(_introKey, '1');
+                setTimeout(() => {
+                    if (!shelfGroup || !controls || typeof gsap === 'undefined') return;
+                    // Nie odpalaj dla bardzo szerokich półek (84 cm) — tam widok frontalny zostaje
+                    const _w = parseInt(widthSelect && (widthSelect.value === 'custom' ? (customWidthInput && customWidthInput.value) : widthSelect.value)) || 0;
+                    if (_w === 84) return;
+                    autoRotateEnabled = false; // pewność że nie ma kolizji z auto-spinem
+                    let _killed = false;
+                    const _stop = () => {
+                        if (_killed) return;
+                        _killed = true;
+                        try { _introTl.kill(); } catch(_) {}
+                        controls.removeEventListener('start', _stop);
+                    };
+                    controls.addEventListener('start', _stop);
+                    const _introTl = gsap.timeline({
+                        onComplete: () => controls.removeEventListener('start', _stop)
+                    });
+                    // Wychylenie 30° w prawo i powrót do 0
+                    _introTl.to(shelfGroup.rotation, {
+                        y: 0.52, // ~30°
+                        duration: 0.85,
+                        ease: 'power2.inOut'
+                    });
+                    _introTl.to(shelfGroup.rotation, {
+                        y: 0,
+                        duration: 0.85,
+                        ease: 'power2.inOut'
+                    });
+                }, 650); // odczekaj aż panel wjedzie i kamera się ustawi
             }
             // NIE blokujemy scroll body — formularz z selectami powyżej panelu 3D
             // musi pozostać dostępny dla kupującego na mobile
