@@ -258,7 +258,34 @@ function updateDividerIconsVisibility() { if (!shelfContainer || !shelfTypeSelec
         }
     }
 }
-        function updateDividerIconActiveStates() { if (addTopDividerBtn && dividersTopCheckbox) addTopDividerBtn.classList.toggle('active-divider-icon', dividersTopCheckbox.checked); if (addMiddleDividerBtn && dividersMiddleCheckbox) addMiddleDividerBtn.classList.toggle('active-divider-icon', dividersMiddleCheckbox.checked); if (addBottomDividerBtn && dividersBottomCheckbox) addBottomDividerBtn.classList.toggle('active-divider-icon', dividersBottomCheckbox.checked); }
+        function updateDividerIconActiveStates() {
+            // Mobile: synchronizuj klasę .is-active (nowy design kart) + zachowaj .active-divider-icon dla wstecznej kompatybilności
+            if (addTopDividerBtn && dividersTopCheckbox) {
+                addTopDividerBtn.classList.toggle('is-active', dividersTopCheckbox.checked);
+                addTopDividerBtn.classList.toggle('active-divider-icon', dividersTopCheckbox.checked);
+            }
+            if (addMiddleDividerBtn && dividersMiddleCheckbox) {
+                addMiddleDividerBtn.classList.toggle('is-active', dividersMiddleCheckbox.checked);
+                addMiddleDividerBtn.classList.toggle('active-divider-icon', dividersMiddleCheckbox.checked);
+            }
+            if (addBottomDividerBtn && dividersBottomCheckbox) {
+                addBottomDividerBtn.classList.toggle('is-active', dividersBottomCheckbox.checked);
+                addBottomDividerBtn.classList.toggle('active-divider-icon', dividersBottomCheckbox.checked);
+            }
+            // Desktop: synchronizuj klasę .is-active na kartach (parent label checkboxów)
+            if (dividersTopCheckbox) {
+                const _c = dividersTopCheckbox.closest('.divider-card');
+                if (_c) _c.classList.toggle('is-active', dividersTopCheckbox.checked);
+            }
+            if (dividersMiddleCheckbox) {
+                const _c = dividersMiddleCheckbox.closest('.divider-card');
+                if (_c) _c.classList.toggle('is-active', dividersMiddleCheckbox.checked);
+            }
+            if (dividersBottomCheckbox) {
+                const _c = dividersBottomCheckbox.closest('.divider-card');
+                if (_c) _c.classList.toggle('is-active', dividersBottomCheckbox.checked);
+            }
+        }
         function updateMobileMountStripStates() { if (!mobileMountHangingStripBtn || !mobileMountStandingStripBtn || !mugShelfMountOptionsDiv) return; const currentMountValue = mugShelfMountOptionsDiv.querySelector('input[name="mugShelfMount"]:checked')?.value; mobileMountHangingStripBtn.classList.toggle('active-mount-strip', currentMountValue === 'hanging'); mobileMountStandingStripBtn.classList.toggle('active-mount-strip', currentMountValue === 'standing'); }
 
         // ── Animacja potwierdzenia wyboru montażu (bounce na osi Y) ──
