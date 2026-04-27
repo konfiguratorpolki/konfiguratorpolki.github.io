@@ -163,6 +163,26 @@
     /* Usunięto transition - GSAP przejmuje kontrolę */
 }
 
+/* ── Fly-to-3D animacja (mobile) — leci po krzywej do ikony "Zobacz 3D" w bottom nav ── */
+.fly-shelf-img {
+    object-fit: cover;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.fly-target-glow {
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,234,150,0.85) 35%, rgba(255,200,80,0.55) 60%, rgba(255,200,80,0) 80%);
+    box-shadow: 0 0 22px 8px rgba(255,220,120,0.65);
+    transform: scale(1);
+    opacity: 1;
+    will-change: transform, opacity;
+}
+
 .image-explode-piece {
     position: absolute;
     width: 50%;
