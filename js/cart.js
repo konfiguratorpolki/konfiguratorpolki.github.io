@@ -95,6 +95,10 @@ function closeCart() {
 
 // ---- DODAWANIE DO KOSZYKA (z animacją snapshotu 3D) ----
 async function addToCart() {
+    // Haptic feedback: "double tap" — dodawanie do koszyka to kluczowy moment, użytkownik czuje że "klik się stał"
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([10, 40, 18]); } catch(_) {}
+    }
     const orderCode = generateOrderCode();
     const priceDetails = computePriceDetailed();
     if (!orderCode || !priceDetails) {
@@ -375,6 +379,10 @@ function toggleInvoiceSection() {
 // ---- OTWARCIE MODALA PODSUMOWANIA (handleCheckout) ----
 function handleCheckout() {
     if (cart.length === 0) return;
+    // Haptic feedback: długi "boom" — moment decyzji zakupowej, satysfakcjonujący sygnał
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([25, 30, 40]); } catch(_) {}
+    }
     closeCart();
     const totals = calculateCartTotal();
     const allCodes = cart.flatMap(item => Array(item.quantity).fill(item.code)).join('\n');
