@@ -783,8 +783,40 @@
     }, true);
   }
 
+  // ========= Twardy lock na czas suwania custom-width sliderem =========
+  // Ustawiany na pointerdown na #customWidthInput, zdejmowany na pointerup + 250 ms grace.
+  // Blokuje wszystkie dźwięki "obok" podczas dragu — zostaje tylko playCustomWidthSlider.
+  let _customWidthDragLock = false;
+  let _customWidthDragLockTimer = null;
+  function _attachCustomWidthDragLock(){
+    const slider = document.getElementById('customWidthInput');
+    if (!slider || slider._dragLockAttached) return;
+    slider._dragLockAttached = true;
+    const lockOn  = () => {
+      _customWidthDragLock = true;
+      clearTimeout(_customWidthDragLockTimer);
+    };
+    const lockOff = () => {
+      clearTimeout(_customWidthDragLockTimer);
+      _customWidthDragLockTimer = setTimeout(() => { _customWidthDragLock = false; }, 250);
+    };
+    slider.addEventListener('pointerdown', lockOn,  { passive: true });
+    slider.addEventListener('mousedown',   lockOn,  { passive: true });
+    slider.addEventListener('touchstart',  lockOn,  { passive: true });
+    slider.addEventListener('pointerup',     lockOff, { passive: true });
+    slider.addEventListener('pointercancel', lockOff, { passive: true });
+    slider.addEventListener('mouseup',       lockOff, { passive: true });
+    slider.addEventListener('touchend',      lockOff, { passive: true });
+    slider.addEventListener('touchcancel',   lockOff, { passive: true });
+  }
+  // Próbuj podpiąć teraz; jeśli slidera jeszcze nie ma — spróbuj za chwilę
+  document.addEventListener('DOMContentLoaded', _attachCustomWidthDragLock);
+  setTimeout(_attachCustomWidthDragLock, 500);
+  setTimeout(_attachCustomWidthDragLock, 2000);
+
   // ========= Delikatny klik dla zmian opcji (kolory, bez górnej/dolnej półki) =========
   function playClickSoft(){
+    if (_customWidthDragLock) return; // cisza podczas suwania
     const ctx = ensureAudioCtx();
     if (!ctx) return;
     try {
@@ -843,6 +875,7 @@
     const ctx = getShelfAudioCtx(); if (!ctx) return;
     // Nie graj gdy aktywny jest slider niestandardowy (ma własny dźwięk)
     if (typeof _customWidthActive !== 'undefined' && _customWidthActive) return;
+    if (typeof _customWidthDragLock !== 'undefined' && _customWidthDragLock) return;
     try {
       const now = ctx.currentTime;
       const bigger = oldVal === null || newVal >= oldVal;
