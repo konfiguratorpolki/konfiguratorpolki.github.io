@@ -1503,6 +1503,100 @@ body.no-scroll {
         color: #15803d;
         box-shadow: none;
     }
+
+    /* ── Karta toggle przegrodki — kompaktowa, spojna na mobile i desktop ── */
+    .divider-card {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 4px 5px 3px;
+        background: #ffffff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 7px;
+        cursor: pointer;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 180ms ease, border-color 180ms ease, transform 120ms ease;
+        font-family: inherit;
+        margin: 0;
+        line-height: 1;
+    }
+    button.divider-card {
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+    }
+    .divider-card:hover {
+        border-color: #86efac;
+        background: #f0fdf4;
+    }
+    .divider-card:active {
+        transform: scale(0.96);
+    }
+    .divider-card__title {
+        font-size: 8.5px;
+        font-weight: 700;
+        color: #6b7280;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: color 180ms ease;
+    }
+    .divider-card__preview {
+        width: 26px;
+        height: 26px;
+        display: block;
+    }
+    .divider-card__bar {
+        stroke: #94a3b8;
+        stroke-dasharray: 2.4 2.4;
+        transition: stroke 200ms ease, stroke-dasharray 200ms ease;
+    }
+    /* Kompaktowa wersja: kropka schowana — sam border + paski sygnalizują stan */
+    .divider-card__check {
+        display: none;
+    }
+    /* Active state — przez .is-active (JS-driven) lub :has(input:checked) (HTML form) */
+    .divider-card.is-active,
+    .divider-card:has(input:checked) {
+        background: #f0fdf4;
+        border-color: #16a34a;
+        box-shadow: 0 1px 3px rgba(22,163,74,0.20);
+    }
+    .divider-card.is-active .divider-card__title,
+    .divider-card:has(input:checked) .divider-card__title {
+        color: #15803d;
+    }
+    .divider-card.is-active .divider-card__bar,
+    .divider-card:has(input:checked) .divider-card__bar {
+        stroke: #16a34a;
+        stroke-dasharray: none;
+    }
+    /* Wiersz kart */
+    .divider-cards-row {
+        display: flex;
+        gap: 5px;
+        align-items: stretch;
+    }
+    /* Desktop — odrobine wieksze ale dalej zwarte */
+    @media (min-width: 768px) {
+        .divider-card {
+            padding: 6px 9px 5px;
+            gap: 3px;
+            border-radius: 9px;
+        }
+        .divider-card__title {
+            font-size: 10.5px;
+        }
+        .divider-card__preview {
+            width: 34px;
+            height: 34px;
+        }
+        .divider-cards-row {
+            gap: 8px;
+        }
+    }
     .mug-options-header { text-md font-semibold mb-2 text-stone-700; }
     #mugShelfMountOptions { display: none; }
     #mugShelfDividersOptions { display: none; }
