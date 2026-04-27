@@ -923,6 +923,49 @@ function fitCameraToShelf() {
         camera.clearViewOffset();
     }
 }
+   // ── SHOWCASE SWING ────────────────────────────────────────────────────────
+   // Efektowne wychylenie 3D po zakończeniu animacji składania półki.
+   // Uruchamia się przy każdej zmianie typu (wisząca, stojąca, kubki, modular, galeria).
+   // Przerywa się natychmiast gdy user dotknie/przeciągnie model.
+   function playShowcaseSwing(shelfType) {
+       if (!shelfGroup || typeof gsap === 'undefined' || !controls) return;
+       // Brak wychylenia dla szerokiej półki 84 cm (widok frontalny)
+       const _w = parseInt(widthSelect && (widthSelect.value === 'custom'
+           ? (customWidthInput && customWidthInput.value)
+           : widthSelect.value)) || 0;
+       if (_w === 84) return;
+
+       let _killed = false;
+       const _tl = gsap.timeline();
+
+       const _stop = () => {
+           if (_killed) return;
+           _killed = true;
+           _tl.kill();
+           if (shelfGroup) gsap.to(shelfGroup.rotation, { y: 0, duration: 0.3, ease: 'power2.out' });
+           controls.removeEventListener('start', _stop);
+       };
+       controls.addEventListener('start', _stop);
+
+       const _done = () => { controls.removeEventListener('start', _stop); };
+
+       if (shelfType === 'mug_shelf') {
+           // Kubki: szersze wychylenie żeby pokazać haczyki — back.out z lekkim sprężynowaniem
+           _tl.to(shelfGroup.rotation, { y: 0.30, duration: 1.60, ease: 'power2.out' })
+              .to(shelfGroup.rotation, { y: 0,    duration: 2.00, ease: 'elastic.out(1, 0.48)', onComplete: _done });
+       } else if (shelfType === 'modular') {
+           // Modular: wychylenie prawo → lewo → środek, pokazuje oba moduły
+           _tl.to(shelfGroup.rotation, { y:  0.20, duration: 1.30, ease: 'power2.out' })
+              .to(shelfGroup.rotation, { y: -0.12, duration: 1.10, ease: 'power2.inOut' })
+              .to(shelfGroup.rotation, { y:  0,    duration: 1.60, ease: 'elastic.out(1, 0.45)', onComplete: _done });
+       } else {
+           // Wisząca / stojąca / galeria / custom: eleganckie wychylenie z elastycznym powrotem
+           _tl.to(shelfGroup.rotation, { y: 0.22, duration: 1.40, ease: 'power2.out' })
+              .to(shelfGroup.rotation, { y: 0,    duration: 1.80, ease: 'elastic.out(1, 0.45)', onComplete: _done });
+       }
+   }
+   // ── KONIEC SHOWCASE SWING ─────────────────────────────────────────────────
+
    function rebuildAndAnimateIn(config, withRotationAnimation = true) {
 
       // Ustaw przesunięcie canvas od razu (przed animacją) — bez opóźnienia
@@ -1024,6 +1067,8 @@ function fitCameraToShelf() {
                         }, 120);
                     }
                     resolve();
+                    // Showcase swing — wychylenie 3D po złożeniu półki
+                    playShowcaseSwing(shelfType);
                 }
             });
 
@@ -4703,41 +4748,7 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
             if (window.innerWidth < 768 && typeof navigator !== 'undefined' && navigator.vibrate) {
                 try { navigator.vibrate(10); } catch(_e) {}
             }
-            // ── INTRO ROTATE: jednorazowy "wow swing" przy pierwszym otwarciu panelu w sesji
-            // Sygnalizuje "to jest 3D, możesz przeciągać". Wyłącza się przy pierwszej interakcji usera.
-            const _introKey = 'intro3dRotatePlayed';
-            if (window.innerWidth < 768 && !sessionStorage.getItem(_introKey)) {
-                sessionStorage.setItem(_introKey, '1');
-                setTimeout(() => {
-                    if (!shelfGroup || !controls || typeof gsap === 'undefined') return;
-                    // Nie odpalaj dla bardzo szerokich półek (84 cm) — tam widok frontalny zostaje
-                    const _w = parseInt(widthSelect && (widthSelect.value === 'custom' ? (customWidthInput && customWidthInput.value) : widthSelect.value)) || 0;
-                    if (_w === 84) return;
-                    autoRotateEnabled = false; // pewność że nie ma kolizji z auto-spinem
-                    let _killed = false;
-                    const _stop = () => {
-                        if (_killed) return;
-                        _killed = true;
-                        try { _introTl.kill(); } catch(_) {}
-                        controls.removeEventListener('start', _stop);
-                    };
-                    controls.addEventListener('start', _stop);
-                    const _introTl = gsap.timeline({
-                        onComplete: () => controls.removeEventListener('start', _stop)
-                    });
-                    // Wychylenie 30° w prawo i powrót do 0
-                    _introTl.to(shelfGroup.rotation, {
-                        y: 0.52, // ~30°
-                        duration: 0.85,
-                        ease: 'power2.inOut'
-                    });
-                    _introTl.to(shelfGroup.rotation, {
-                        y: 0,
-                        duration: 0.85,
-                        ease: 'power2.inOut'
-                    });
-                }, 650); // odczekaj aż panel wjedzie i kamera się ustawi
-            }
+            // Showcase swing uruchamia się automatycznie po rebuildAndAnimateIn (playShowcaseSwing)
             // NIE blokujemy scroll body — formularz z selectami powyżej panelu 3D
             // musi pozostać dostępny dla kupującego na mobile
             // (panel 3D zajmuje tylko dolne 52vh, strona z selectami jest powyżej)
