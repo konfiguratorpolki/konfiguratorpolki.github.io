@@ -3957,91 +3957,108 @@ function generateOrderCode() { const shelfTypeVal = shelfTypeSelect.value; const
         return;
     }
 
-    // --- FINAŁOWA WERSJA ANIMACJI v2.3 Z BLOKADĄ PRZEWIJANIA ---
+    // --- FINAŁOWA WERSJA ANIMACJI v3.0 — fly-to-3d-icon (Etsy/Allegro style) ---
     const animateAndConfigure = (imgElement, galleryIndex, imageIndex) => {
-        // --- ANIMACJA MOBILNA ---
+        // --- ANIMACJA MOBILNA: zdjęcie leci po krzywej do ikony "Zobacz 3D" w bottom nav ---
         if (window.innerWidth < 768) {
-            const startRect = imgElement.getBoundingClientRect();
-            const actionBar = imgElement.closest('.gallery-image-container')?.querySelector('.gal-overlay');
+            const startRect  = imgElement.getBoundingClientRect();
+            const actionBar  = imgElement.closest('.gallery-image-container')?.querySelector('.gal-overlay');
+            const targetBtn  = document.getElementById('show3dButton');
+            const targetIcon = targetBtn ? targetBtn.querySelector('svg') : null;
+
+            // Fallback jeśli nie ma celu — od razu otwórz panel
+            if (!targetBtn || !targetIcon) {
+                open3dPanel();
+                setTimeout(() => applyShelfConfigurationFromGallery(galleryIndex, imageIndex), 350);
+                return;
+            }
+
             if (actionBar) actionBar.style.opacity = '0';
 
-            // 1. Otwórz pusty panel 3D
-            open3dPanel();
+            // 1. Sklonuj zdjęcie jako lecący duch
+            const fly = document.createElement('img');
+            fly.src = imgElement.src;
+            fly.className = 'fly-shelf-img';
+            fly.style.cssText = `position:fixed;left:${startRect.left}px;top:${startRect.top}px;width:${startRect.width}px;height:${startRect.height}px;z-index:9998;pointer-events:none;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.25);transform-origin:center center;will-change:transform,opacity;`;
+            document.body.appendChild(fly);
 
-            // 2. Poczekaj aż panel wyjedzie, potem animuj
-            setTimeout(() => {
-                const canvasWrapper = document.getElementById('threeJsCanvasWrapper');
-                if (!canvasWrapper) { if (actionBar) actionBar.style.opacity = '1'; return; }
-                const endRect = canvasWrapper.getBoundingClientRect();
+            // 2. Punkt docelowy = środek ikonki SVG w przycisku 3D
+            const endRect  = targetIcon.getBoundingClientRect();
+            const endX     = endRect.left + endRect.width  / 2;
+            const endY     = endRect.top  + endRect.height / 2;
+            const startCx  = startRect.left + startRect.width  / 2;
+            const startCy  = startRect.top  + startRect.height / 2;
+            const finalSize = 26; // ~rozmiar ikony 3D
 
-                const explodeContainer = document.createElement('div');
-                explodeContainer.className = 'image-explode-container';
-                document.body.appendChild(explodeContainer);
+            // 3. Punkt szczytowy paraboli — wyrzut "w górę i w bok"
+            const arcLiftPx = Math.min(120, Math.abs(endY - startCy) * 0.45);
+            const midX = startCx + (endX - startCx) * 0.55;
+            const midY = Math.min(startCy, endY) - arcLiftPx;
 
-                const positions = [
-                    { top: '0',   left: '0',   bgPos: '0% 0%' },
-                    { top: '0',   left: '50%', bgPos: '100% 0%' },
-                    { top: '50%', left: '0',   bgPos: '0% 100%' },
-                    { top: '50%', left: '50%', bgPos: '100% 100%' }
-                ];
+            // 4. Glow ring na ikonie 3D (preload — pojawi się gdy zdjęcie doleci)
+            const glow = document.createElement('span');
+            glow.className = 'fly-target-glow';
+            glow.style.cssText = `position:fixed;left:${endX}px;top:${endY}px;z-index:9997;pointer-events:none;`;
+            document.body.appendChild(glow);
 
-                const pieces = positions.map(pos => {
-                    const piece = document.createElement('div');
-                    piece.className = 'image-explode-piece';
-                    piece.style.top = pos.top;
-                    piece.style.left = pos.left;
-                    piece.style.backgroundImage = `url(${imgElement.src})`;
-                    piece.style.backgroundPosition = pos.bgPos;
-                    explodeContainer.appendChild(piece);
-                    return piece;
-                });
+            // 5. Timeline: dwie fazy paraboli + bump + open panel
+            const tl = gsap.timeline({
+                onComplete: () => {
+                    fly.remove();
+                    glow.remove();
+                    if (actionBar) actionBar.style.opacity = '1';
+                }
+            });
 
-                gsap.set(explodeContainer, {
-                    left:   startRect.left,
-                    top:    startRect.top,
-                    width:  startRect.width,
-                    height: startRect.height
-                });
+            // Faza A: w górę po łuku do midpoint, lekko zmniejszone
+            tl.to(fly, {
+                left: midX - startRect.width / 2,
+                top:  midY - startRect.height / 2,
+                scale: 0.55,
+                rotation: -6,
+                duration: 0.42,
+                ease: 'power2.out'
+            });
 
-                const tl = gsap.timeline({
-                    onComplete: () => {
-                        explodeContainer.remove();
-                        if (actionBar) actionBar.style.opacity = '1';
-                    }
-                });
+            // Faza B: opadanie do ikony, mocny scale-down + opacity fade — wolniej, glide-like
+            tl.to(fly, {
+                left: endX - finalSize / 2,
+                top:  endY - finalSize / 2,
+                width:  finalSize,
+                height: finalSize,
+                scale: 1,
+                rotation: 6,
+                opacity: 0.4,
+                borderRadius: '50%',
+                duration: 0.62,
+                ease: 'power1.in'
+            });
 
-                // 3. Zdjęcie spada płynnie na cały obszar canvasa
-                tl.to(explodeContainer, {
-                    left:   endRect.left,
-                    top:    endRect.top,
-                    width:  endRect.width,
-                    height: endRect.height,
-                    borderRadius: '0',
-                    duration: 0.85,
-                    ease: 'power3.inOut'
-                });
+            // Faza C: bump ikony 3D — scale up + glow pulse
+            tl.to(targetIcon, {
+                scale: 1.45,
+                duration: 0.18,
+                ease: 'power2.out'
+            }, '>-0.05');
+            tl.to(glow, {
+                scale: 2.4,
+                opacity: 0,
+                duration: 0.55,
+                ease: 'power2.out'
+            }, '<');
+            tl.to(targetIcon, {
+                scale: 1,
+                duration: 0.55,
+                ease: 'elastic.out(1, 0.45)'
+            });
 
-                // 4. Krótka pauza — zdjęcie "siedzi" na canvasie
-                tl.to({}, { duration: 0.15 });
-
-                // 5. Fragmenty implodują DO CENTRUM — każdy z rogu wciąga się do środka
-                tl.to(pieces, {
-                    xPercent: (i) => (i % 2 === 0 ? 50 : -50),   // lewe → prawo, prawe → lewo
-                    yPercent: (i) => (i < 2 ? 50 : -50),           // górne → dół, dolne → góra
-                    scale: 0,
-                    opacity: 0,
-                    rotation: (i) => (i % 2 === 0 ? -45 : 45),    // skręt do środka
-                    duration: 0.65,
-                    ease: 'power2.in',
-                    stagger: 0.07                                   // szybki stagger — wciągają się po sobie
-                });
-
-                // 6. Gdy ostatni fragment znika — buduj półkę z centrum
-                tl.call(() => {
-                    applyShelfConfigurationFromGallery(galleryIndex, imageIndex);
-                }, [], '>-0.1');
-
-            }, 400);
+            // Faza D: krótka pauza, otwórz panel 3D, zastosuj konfigurację
+            tl.call(() => {
+                open3dPanel();
+            }, [], '>-0.35');
+            tl.call(() => {
+                applyShelfConfigurationFromGallery(galleryIndex, imageIndex);
+            }, [], '>-0.05');
 
             return;
         }
