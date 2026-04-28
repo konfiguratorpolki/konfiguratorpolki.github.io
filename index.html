@@ -1118,7 +1118,26 @@
                 </div>
             </div>
 
-
+            <!-- CO MÓWIĄ NASI KLIENCI -->
+            <div style="margin-top:4px;padding:14px 16px 12px;background:#fff;border-radius:14px;border:1px solid #e7e5e4;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+              <p style="text-align:center;font-size:10px;font-weight:700;color:#b5b0ab;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 10px 0;">Co mówią nasi klienci?</p>
+              <div style="position:relative;">
+                <!-- Opinia 1 -->
+                <div class="review-slide" style="text-align:center;">
+                  <svg style="color:#f59e0b;display:inline-flex;gap:2px;margin-bottom:6px;" width="80" height="14" viewBox="0 0 80 14" fill="#f59e0b"><path d="M7 0l1.8 3.6L13 4.3 10 7.2l.7 4.1L7 9.1 2.3 11.3 3 7.2 0 4.3l4.2-.7z"/><path d="M23 0l1.8 3.6L29 4.3 26 7.2l.7 4.1L23 9.1l-4.7 2.2.7-4.1L16 4.3l4.2-.7z"/><path d="M39 0l1.8 3.6L45 4.3 42 7.2l.7 4.1L39 9.1l-4.7 2.2.7-4.1L32 4.3l4.2-.7z"/><path d="M55 0l1.8 3.6L61 4.3 58 7.2l.7 4.1L55 9.1l-4.7 2.2.7-4.1L48 4.3l4.2-.7z"/><path d="M71 0l1.8 3.6L77 4.3 74 7.2l.7 4.1L71 9.1l-4.7 2.2.7-4.1L64 4.3l4.2-.7z"/></svg>
+                  <p style="font-size:12px;color:#374151;font-style:italic;line-height:1.55;margin:0 0 6px;">„Fantastyczna półeczka, przyszła od razu zmontowana i idealnie pasuje w wielu miejscach. Serdecznie polecam!"</p>
+                  <p style="font-size:10px;font-weight:700;color:#9ca3af;margin:0;">— Kasia M.</p>
+                </div>
+              </div>
+              <div style="text-align:center;margin-top:10px;">
+                <a href="https://allegro.pl/uzytkownik/kuchenneregaliki" target="_blank" rel="noopener"
+                   style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#ff5a00;text-decoration:none;background:#fff5f0;border:1px solid #ffd4b8;border-radius:8px;padding:5px 10px;transition:opacity .15s;"
+                   onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  Sprawdź nas pod komentarzami
+                </a>
+              </div>
+            </div>
 
         </div>
 
@@ -1168,12 +1187,15 @@
   </div>
 </div>
 
-<div id="viewOrderSection" class="bg-white rounded-xl shadow-sm p-4 border border-stone-100">
-            <button onclick="openBatchExportModal()" class="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-stone-50 border border-stone-200 text-xs font-semibold text-stone-600 hover:border-green-500 hover:text-green-700 hover:bg-green-50 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Sprawdź projekt
-            </button>
-        </div>
+<div id="viewOrderSection" style="display:none;"></div>
+
+<!-- SPRAWDŹ PROJEKT — pod "Znajdziesz nas" -->
+<div style="margin-top:0;padding:0 0 8px;">
+  <button onclick="openBatchExportModal()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#15803d';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e5e7eb';this.style.color='#6b7280';this.style.background='#f9fafb'">
+    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+    Sprawdź projekt
+  </button>
+</div>
 
         <!-- BATCH EXPORT MODAL -->
         <div id="batchExportOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeBatchExportModal()">
@@ -1262,48 +1284,53 @@
 
 <script id="pfx-premium-logic" src="pfx-effects.js"></script>
 
-<!-- SEO TEXT BLOCK — rozwijana zakładka "O nas", treść w DOM = indeksowalna przez Google -->
-<section style="background:#fafafa;border-top:1px solid #f3f4f6;">
-  <div style="max-width:860px;margin:0 auto">
-    <button
-      id="onas-toggle"
-      onclick="(function(){var c=document.getElementById('onas-content');var a=document.getElementById('onas-arrow');var open=c.style.maxHeight&&c.style.maxHeight!=='0px';c.style.maxHeight=open?'0px':c.scrollHeight+'px';c.style.opacity=open?'0':'1';a.style.transform=open?'rotate(0deg)':'rotate(180deg)';})()"
-      style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:none;border:none;cursor:pointer;gap:8px;text-align:left;"
-      aria-expanded="false"
-      aria-controls="onas-content"
-    >
-      <span style="font-size:.78rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;">O nas</span>
-      <svg id="onas-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .3s ease;"><polyline points="6 9 12 15 18 9"/></svg>
-    </button>
-    <div
-      id="onas-content"
-      style="max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease, opacity .3s ease;padding:0 24px;"
-    >
-      <div style="padding-bottom:18px;">
-        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
-          Regaliki.pl to intuicyjny <strong style="color:#6b7280;font-weight:600">konfigurator półki 3D</strong>, dzięki któremu zaprojektujesz <strong style="color:#6b7280;font-weight:600">półkę wiszącą na wymiar</strong> bezpośrednio w przeglądarce — bez wizyty w sklepie i bez kontaktu z doradcą. Wybierz rodzaj półki, ustaw szerokość, wysokość i głębokość, dobierz kolor boków oraz półek wewnętrznych, a model 3D zaktualizuje się na żywo.
-        </p>
-        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0 0 6px">
-          Cena Twojej <strong style="color:#6b7280;font-weight:600">półki na wymiar</strong> pojawia się automatycznie po wybraniu wszystkich parametrów — bez ukrytych kosztów. Oferujemy płytę laminowaną gr. 1,8 cm w wielu kolorach, realizację w <strong style="color:#6b7280;font-weight:600">3–7 dni roboczych</strong> i dostawę kurierem DPD na terenie całej Polski.
-        </p>
-        <p style="font-size:.78rem;color:#9ca3af;line-height:1.65;margin:0">
-          Skorzystaj z <strong style="color:#6b7280;font-weight:600">konfiguratora mebli online</strong> i zamów półkę skrojoną dokładnie pod Twoje wnętrze. Bezpieczna płatność przez Przelewy24 — BLIK, karta lub przelew.
-        </p>
+<!-- SITE FOOTER — z zakładką O nas wbudowaną -->
+<footer style="background:#fff;border-top:1px solid #e5e7eb;margin-top:0;padding-bottom:env(safe-area-inset-bottom)">
+
+  <!-- O NAS — rozwijana, treść w DOM dla SEO -->
+  <div style="border-bottom:1px solid #f3f4f6;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <button
+        id="onas-toggle"
+        onclick="(function(){var c=document.getElementById('onas-content');var a=document.getElementById('onas-arrow');var open=c.style.maxHeight&&c.style.maxHeight!=='0px';c.style.maxHeight=open?'0px':c.scrollHeight+'px';c.style.opacity=open?'0':'1';a.style.transform=open?'rotate(0deg)':'rotate(180deg)';})()"
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:none;border:none;cursor:pointer;gap:8px;text-align:left;"
+        aria-expanded="false"
+        aria-controls="onas-content"
+      >
+        <span style="font-size:.72rem;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;">O nas</span>
+        <svg id="onas-arrow" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform .3s ease;"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div
+        id="onas-content"
+        style="max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease, opacity .3s ease;padding:0 28px;"
+      >
+        <div style="padding-bottom:16px;display:flex;flex-direction:column;gap:6px;">
+          <p style="font-size:.75rem;color:#9ca3af;line-height:1.65;margin:0">
+            Regaliki.pl to intuicyjny <strong style="color:#6b7280;font-weight:600">konfigurator półki 3D</strong>, dzięki któremu zaprojektujesz <strong style="color:#6b7280;font-weight:600">półkę wiszącą na wymiar</strong> bezpośrednio w przeglądarce — bez wizyty w sklepie i bez kontaktu z doradcą. Wybierz rodzaj półki, ustaw szerokość, wysokość i głębokość, dobierz kolor boków oraz półek wewnętrznych, a model 3D zaktualizuje się na żywo.
+          </p>
+          <p style="font-size:.75rem;color:#9ca3af;line-height:1.65;margin:0">
+            Cena Twojej <strong style="color:#6b7280;font-weight:600">półki na wymiar</strong> pojawia się automatycznie po wybraniu wszystkich parametrów — bez ukrytych kosztów. Oferujemy płytę laminowaną gr. 1,8 cm w wielu kolorach, realizację w <strong style="color:#6b7280;font-weight:600">3–7 dni roboczych</strong> i dostawę kurierem DPD na terenie całej Polski.
+          </p>
+          <p style="font-size:.75rem;color:#9ca3af;line-height:1.65;margin:0">
+            Skorzystaj z <strong style="color:#6b7280;font-weight:600">konfiguratora mebli online</strong> i zamów półkę skrojoną dokładnie pod Twoje wnętrze. Bezpieczna płatność przez Przelewy24 — BLIK, karta lub przelew.
+          </p>
+          <p style="font-size:.72rem;color:#b5b0ab;line-height:1.5;margin:4px 0 0;border-top:1px solid #f3f4f6;padding-top:10px;">
+            © 2026 Nowy Wymiar Damian Maga &nbsp;·&nbsp; NIP: 7922074097
+          </p>
+        </div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- SITE FOOTER -->
-<footer style="background:#fff;border-top:1px solid #e5e7eb;padding:18px 28px;margin-top:0;padding-bottom:calc(18px + env(safe-area-inset-bottom))">
-  <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
-    <p style="font-size:.72rem;color:#9ca3af;margin:0">© 2026 Nowy Wymiar Damian Maga &nbsp;·&nbsp; NIP: 7922074097</p>
-    <div style="display:flex;gap:16px;flex-wrap:wrap">
-      <a href="regulamin.html" style="font-size:.75rem;color:#6b7280;text-decoration:none;font-weight:500;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">Regulamin sklepu</a>
-      <a href="polityka.html" style="font-size:.75rem;color:#6b7280;text-decoration:none;font-weight:500;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">Polityka prywatności</a>
-      <span style="font-size:.75rem;color:#6b7280;font-weight:500">Kontakt: regaliki.pl@gmail.com</span>
-    </div>
+  <!-- Linki -->
+  <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 20px;padding:13px 28px;">
+    <a href="regulamin.html" style="font-size:.75rem;color:#6b7280;text-decoration:none;font-weight:500;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">Regulamin sklepu</a>
+    <span style="color:#d1d5db;font-size:.75rem;">·</span>
+    <a href="polityka.html" style="font-size:.75rem;color:#6b7280;text-decoration:none;font-weight:500;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">Polityka prywatności</a>
+    <span style="color:#d1d5db;font-size:.75rem;">·</span>
+    <span style="font-size:.75rem;color:#6b7280;font-weight:500">Kontakt: regaliki.pl@gmail.com</span>
   </div>
+
 </footer>
 </body>
 </html>
