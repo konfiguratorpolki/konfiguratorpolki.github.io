@@ -3143,3 +3143,34 @@ body.no-scroll {
         transition: opacity .18s ease, transform .18s ease;
     }
     #snapZoom img { width: 100%; height: 100%; object-fit: contain; }
+/* ══════════════════════════════════════════════════════════════
+   MOBILE: ujednolicenie kart konfiguratorowych
+   Wyrównuje wygląd sp-panel i orderSummarySection do stylu
+   kart po lewej stronie (Rodzaj, Wymiary, Kolory)
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+    /* sp-panel (Półki wewnętrzne) */
+    .sp-panel {
+        border-radius: 12px !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important;
+    }
+
+    /* orderSummarySection (Parametry półki + cena) */
+    #orderSummarySection {
+        border-radius: 12px !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07) !important;
+    }
+
+    /* Wrapper prawej kolumny — usuń "pudełko w pudełku" na mobile.
+       Ten div (bg-stone-50 border p-6) owijał orderSummarySection
+       i tworzył podwójne obramowanie + szare tło. */
+    #configuratorSection > .order-3 {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+}
