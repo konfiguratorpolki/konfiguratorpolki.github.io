@@ -2562,25 +2562,46 @@ function fitCameraToShelf() {
     // Nazwa typu — dla custom layoutów z wyborem montażu dołącz info o montażu
     const _isCustomSt = currentShelfType && SHELF_TYPES.find(t => t.id === currentShelfType && t.isCustomLayout);
     const _custBo = _isCustomSt ? (_isCustomSt.buyerOptions || {}) : null;
-    if (_isCustomSt && _custBo && _custBo.allowTypeChoice && _custMountType) {
-        const _mtLabel = _custMountType === 'standing' ? 'Stojąca' : 'Wisząca';
-        const _typeName = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : '';
-        document.getElementById("shelfTypeSummary").textContent = _typeName ? `${_typeName} · ${_mtLabel}` : _mtLabel;
-    } else {
-        document.getElementById("shelfTypeSummary").textContent = currentShelfType && shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
-    }
-    const mugShelfMountItem = document.getElementById("mugShelfMountSummaryItem");
     const mugShelfMountSummary = document.getElementById("mugShelfMountSummary");
-    if (currentShelfType === 'mug_shelf') {
+    function _showMountBadge(text) { if (mugShelfMountSummary) { mugShelfMountSummary.textContent = text; mugShelfMountSummary.style.display = 'inline-flex'; } }
+    function _hideMountBadge() { if (mugShelfMountSummary) { mugShelfMountSummary.textContent = ''; mugShelfMountSummary.style.display = 'none'; } }
+    if (_isCustomSt && _custBo && _custBo.allowTypeChoice && _custMountType) {
+        const _typeName = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : '';
+        document.getElementById("shelfTypeSummary").textContent = _typeName || '-- Wybierz --';
+        _showMountBadge(_custMountType === 'standing' ? 'gotowa do postawienia na blacie' : 'gotowa do powieszenia na ścianie');
+    } else if (currentShelfType === 'mug_shelf') {
+        document.getElementById("shelfTypeSummary").textContent = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
         const selectedMountRadio = document.querySelector('input[name="mugShelfMount"]:checked');
-        mugShelfMountSummary.textContent = selectedMountRadio ? (selectedMountRadio.value === 'hanging' ? 'Wisząca' : 'Stojąca') : 'nie wybrano';
-        mugShelfMountItem.style.display = 'flex';
+        if (selectedMountRadio) {
+            _showMountBadge(selectedMountRadio.value === 'hanging' ? 'gotowa do powieszenia na ścianie' : 'gotowa do postawienia na blacie');
+        } else { _hideMountBadge(); }
+    } else if (currentShelfType === 'hanging') {
+        document.getElementById("shelfTypeSummary").textContent = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
+        _showMountBadge('gotowa do powieszenia na ścianie');
+    } else if (currentShelfType === 'standing') {
+        document.getElementById("shelfTypeSummary").textContent = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
+        _showMountBadge('gotowa do postawienia na blacie');
+    } else if (currentShelfType === 'modular') {
+        document.getElementById("shelfTypeSummary").textContent = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
+        const _modHanging = document.getElementById('modularHanging')?.checked;
+        const _modStanding = document.getElementById('modularStanding')?.checked;
+        if (_modHanging && _modStanding) { _showMountBadge('gotowa do powieszenia i postawienia'); }
+        else if (_modHanging) { _showMountBadge('gotowa do powieszenia na ścianie'); }
+        else if (_modStanding) { _showMountBadge('gotowa do postawienia na blacie'); }
+        else { _hideMountBadge(); }
     } else {
-        mugShelfMountItem.style.display = 'none';
+        document.getElementById("shelfTypeSummary").textContent = shelfTypeSelect.selectedIndex > 0 ? shelfTypeSelect.options[shelfTypeSelect.selectedIndex].text : "-- Wybierz --";
+        const _patternType = currentShelfType ? (SHELF_TYPES || []).find(t => t.id === currentShelfType) : null;
+        if (_patternType && _patternType.isCustomLayout) {
+            const _defaultMount = _patternType.defaultMountType || null;
+            if (_defaultMount === 'hanging') { _showMountBadge('gotowa do powieszenia na ścianie'); }
+            else if (_defaultMount === 'standing') { _showMountBadge('gotowa do postawienia na blacie'); }
+            else { _hideMountBadge(); }
+        } else { _hideMountBadge(); }
     }
     const widthSummaryLabel = document.getElementById('widthSummaryLabel');
     const heightSummaryLabel = document.getElementById('heightSummaryLabel');
-    const connectingWidthSummaryLabel = document.getElementById('connectingWidthSummaryLabel').parentElement;
+    const connectingWidthSummaryRow = document.getElementById('connectingWidthSummaryRow');
     const shelfCountSummaryLabel = document.getElementById('shelfCountSummaryLabel');
     if (currentShelfType === 'modular') {
         const moduleW = parseInt(moduleWidthSelect.value);
@@ -2596,32 +2617,25 @@ function fitCameraToShelf() {
             totalShelves = (2 * (shelfNum + 2)) + (shelfNum + 1);
             totalWidth = (moduleW * 2) + connectW;
         }
-        widthSummaryLabel.textContent = "Szer. całkowita:";
+        widthSummaryLabel.textContent = "Szer. całkowita";
         document.getElementById("widthSummary").textContent = totalWidth ? `${totalWidth} cm` : "--";
-        heightSummaryLabel.textContent = "Wysokość:";
+        heightSummaryLabel.textContent = "Wysokość";
         document.getElementById("heightSummary").textContent = moduleH ? `${moduleH} cm` : "--";
-        document.getElementById("depthSummary").parentElement.style.display = 'flex';
         document.getElementById("depthSummary").textContent = depth ? `${depth} cm` : "--";
-        connectingWidthSummaryLabel.style.display = 'flex';
+        if (connectingWidthSummaryRow) connectingWidthSummaryRow.style.display = 'block';
         const connectingLabelSpan = document.getElementById("connectingWidthSummaryLabel");
-        if (connectingLabelSpan) connectingLabelSpan.textContent = "Komponenty (Szer.):";
+        if (connectingLabelSpan) connectingLabelSpan.textContent = "Komponenty (Szer.)";
         document.getElementById("connectingWidthSummary").textContent = (moduleW && connectW) ? `${moduleW}cm + ${connectW}cm + ${moduleW}cm` : "--";
-        shelfCountSummaryLabel.textContent = "Ilość półek (łącznie):";
+        shelfCountSummaryLabel.textContent = "Ilość półek (łącznie)";
         document.getElementById("shelfCountSummary").textContent = totalShelves ? `${totalShelves} szt.` : "--";
         updateModularInfoText();
     } else {
-        widthSummaryLabel.textContent = "Szerokość:";
-        heightSummaryLabel.textContent = "Wysokość:";
-        shelfCountSummaryLabel.textContent = "Ilość półek wewn.:";
-        connectingWidthSummaryLabel.style.display = 'none';
-        document.getElementById("depthSummary").parentElement.style.display = 'flex';
+        widthSummaryLabel.textContent = "Szerokość";
+        heightSummaryLabel.textContent = "Wysokość";
+        shelfCountSummaryLabel.textContent = "Ilość półek wewn.";
+        if (connectingWidthSummaryRow) connectingWidthSummaryRow.style.display = 'none';
         document.getElementById("widthSummary").textContent = !isNaN(getCurrentWidth()) ? getCurrentWidth() + " cm" : "--";
-        // Oznacz dopłatę za niestandardową szerokość
-        const widthSummaryEl = document.getElementById("widthSummary");
         const widthCustomBadge = document.getElementById("widthCustomBadge");
-        if (widthSummaryEl) {
-            widthSummaryEl.textContent = !isNaN(getCurrentWidth()) ? getCurrentWidth() + " cm" : "--";
-        }
         if (widthCustomBadge) {
             widthCustomBadge.style.display = widthSelect.value === 'custom' ? 'inline-flex' : 'none';
         }
@@ -2631,8 +2645,21 @@ function fitCameraToShelf() {
         if (modularInfoText) modularInfoText.style.display = 'none';
     }
     document.getElementById("depthSummary").textContent = depthSelect.value && depthSelect.value !== "" ? depthSelect.value + " cm" : "--";
-    document.getElementById("sideColorSummary").textContent = sideColorSelect.value && sideColorSelect.selectedIndex > 0 ? sideColorSelect.options[sideColorSelect.selectedIndex].text : "nie wybrano";
-    document.getElementById("shelfColorSummary").textContent = shelfColorSelect.value && shelfColorSelect.selectedIndex > 0 ? shelfColorSelect.options[shelfColorSelect.selectedIndex].text : "nie wybrano";
+    const _sideColorEl = document.getElementById("sideColorSummary");
+    const _sideChosen = sideColorSelect.value && sideColorSelect.selectedIndex > 0;
+    _sideColorEl.textContent = _sideChosen ? sideColorSelect.options[sideColorSelect.selectedIndex].text : "nie wybrano";
+    _sideColorEl.style.color = _sideChosen ? '' : '#dc2626';
+    _sideColorEl.style.fontWeight = _sideChosen ? '' : '600';
+
+    const _shelfColorEl = document.getElementById("shelfColorSummary");
+    const _shelfChosen = shelfColorSelect.value && shelfColorSelect.selectedIndex > 0;
+    _shelfColorEl.textContent = _shelfChosen ? shelfColorSelect.options[shelfColorSelect.selectedIndex].text : "nie wybrano";
+    _shelfColorEl.style.color = _shelfChosen ? '' : '#dc2626';
+    _shelfColorEl.style.fontWeight = _shelfChosen ? '' : '600';
+
+    // (mount badge handled by mugShelfMountSummary span in HTML)
+    const _mountInfoEl_old = document.getElementById("mountInfoSummary");
+    if (_mountInfoEl_old) _mountInfoEl_old.remove();
     const h = parseFloat(heightSelect.value);
     const sc = parseInt(shelfCountSelect.value);
     const t = 1.8;
