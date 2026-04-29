@@ -2648,14 +2648,14 @@ function fitCameraToShelf() {
     const _sideColorEl = document.getElementById("sideColorSummary");
     const _sideChosen = sideColorSelect.value && sideColorSelect.selectedIndex > 0;
     _sideColorEl.textContent = _sideChosen ? sideColorSelect.options[sideColorSelect.selectedIndex].text : "nie wybrano";
-    _sideColorEl.style.color = _sideChosen ? '' : '#dc2626';
-    _sideColorEl.style.fontWeight = _sideChosen ? '' : '600';
+    _sideColorEl.style.color = _sideChosen ? '#111827' : '#9ca3af';
+    _sideColorEl.style.fontWeight = _sideChosen ? '600' : '500';
 
     const _shelfColorEl = document.getElementById("shelfColorSummary");
     const _shelfChosen = shelfColorSelect.value && shelfColorSelect.selectedIndex > 0;
     _shelfColorEl.textContent = _shelfChosen ? shelfColorSelect.options[shelfColorSelect.selectedIndex].text : "nie wybrano";
-    _shelfColorEl.style.color = _shelfChosen ? '' : '#dc2626';
-    _shelfColorEl.style.fontWeight = _shelfChosen ? '' : '600';
+    _shelfColorEl.style.color = _shelfChosen ? '#111827' : '#9ca3af';
+    _shelfColorEl.style.fontWeight = _shelfChosen ? '600' : '500';
 
     // (mount badge handled by mugShelfMountSummary span in HTML)
     const _mountInfoEl_old = document.getElementById("mountInfoSummary");
@@ -2701,7 +2701,7 @@ function fitCameraToShelf() {
             }
         }
     }
-    document.getElementById("gapSummary").textContent = gT; const gapSummaryLi2 = document.getElementById("gapSummary")?.parentElement; const gapDisplayP2 = document.getElementById("gapDisplay"); if (typeof customShelfPositionEnabled !== 'undefined' && customShelfPositionEnabled) { if (gapSummaryLi2) gapSummaryLi2.style.display = 'none'; if (gapDisplayP2) gapDisplayP2.style.display = 'none'; } const customPosRow = document.getElementById('customPosSummaryRow'); const customPosSummaryEl = document.getElementById('customPosSummary'); if (customPosRow && customPosSummaryEl) { const cps2 = typeof getCustomPositionSummary === 'function' ? getCustomPositionSummary() : null; if (cps2) { const d2 = cps2.distances; const isCharged = (typeof customPositionsModified !== 'undefined' && customPositionsModified); let h2 = '<div style="display:flex;flex-direction:column;gap:4px">'; h2 += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'; h2 += '<span style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em">Rozmieszczenie</span>'; if (isCharged) { h2 += '<span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700">+50 zł</span>'; } h2 += '</div>'; h2 += '<div style="display:flex;flex-wrap:wrap;gap:4px">'; for (let ii = 0; ii < d2.length; ii++) { h2 += '<span style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">' + (Number.isInteger(d2[ii]) ? d2[ii] : d2[ii].toFixed(1)) + ' cm</span>'; } h2 += '</div></div>'; customPosSummaryEl.innerHTML = h2; customPosRow.style.display = 'flex'; } else { customPosRow.style.display = 'none'; } }
+    document.getElementById("gapSummary").textContent = gT; const gapSummaryLi2 = document.getElementById("gapSummary")?.parentElement; const gapDisplayP2 = document.getElementById("gapDisplay"); if (typeof customShelfPositionEnabled !== 'undefined' && customShelfPositionEnabled) { if (gapSummaryLi2) gapSummaryLi2.style.display = 'none'; if (gapDisplayP2) gapDisplayP2.style.display = 'none'; } const customPosRow = document.getElementById('customPosSummaryRow'); const customPosSummaryEl = document.getElementById('customPosSummary'); if (customPosRow && customPosSummaryEl) { const cps2 = typeof getCustomPositionSummary === 'function' ? getCustomPositionSummary() : null; if (cps2) { const d2 = cps2.distances; const isCharged = (typeof customPositionsModified !== 'undefined' && customPositionsModified); let h2 = '<div style="display:flex;flex-direction:column;gap:6px">'; h2 += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'; h2 += '<span style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.06em">Rozmieszczenie</span>'; if (isCharged) { h2 += '<span style="background:#1f2937;color:#fff;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.02em">+50 zł</span>'; } h2 += '</div>'; h2 += '<div style="display:flex;flex-wrap:wrap;gap:4px">'; for (let ii = 0; ii < d2.length; ii++) { h2 += '<span style="background:#f3f4f6;border:1px solid #e5e7eb;color:#374151;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600">' + (Number.isInteger(d2[ii]) ? d2[ii] : d2[ii].toFixed(1)) + ' cm</span>'; } h2 += '</div></div>'; customPosSummaryEl.innerHTML = h2; customPosRow.style.display = 'block'; } else { customPosRow.style.display = 'none'; } }
     document.getElementById("gapSummaryDisplay").textContent = gT;
     const gapSummaryLi = document.getElementById("gapSummary")?.parentElement;
     const gapDisplayP = document.getElementById("gapDisplay");
