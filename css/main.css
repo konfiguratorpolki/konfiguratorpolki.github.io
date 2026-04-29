@@ -2175,7 +2175,207 @@ body.no-scroll {
         align-items: center;
     }
 
-    /* ---- Profesjonalne wiersze parametrów ---- */
+    /* ============================================================
+       NOWA STRUKTURA PANELU — jasny styl
+       ============================================================ */
+
+    .params-panel {
+        background: #ffffff;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .params-panel-header {
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .params-panel-header h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+        letter-spacing: -0.01em;
+    }
+
+    /* Sekcje */
+    .params-group {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .params-group--last {
+        border-bottom: none;
+    }
+    .params-group-title {
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin: 0 0 8px 0;
+    }
+
+    /* Rodzaj półki */
+    .params-type-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .params-type-name {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #111827;
+    }
+    .params-mount-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        border: 1px solid #bbf7d0;
+    }
+
+    /* ---- Nowy layout sekcji podsumowania ---- */
+    .summary-section {
+        padding: 12px 0;
+    }
+    .summary-section-border {
+        border-top: 1px solid #e5e7eb;
+    }
+    .summary-section-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 6px;
+    }
+    .summary-type-name {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.3;
+    }
+    .summary-dims-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+        margin-top: 2px;
+    }
+    .summary-dim-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .summary-dim-label {
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .summary-dim-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1.3;
+    }
+    .summary-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 4px 0;
+    }
+    .summary-row-label {
+        font-size: 12.5px;
+        font-weight: 400;
+        color: #374151;
+        flex-shrink: 0;
+        line-height: 1.4;
+    }
+    .summary-row-value {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #111827;
+        text-align: right;
+        line-height: 1.4;
+    }
+
+    /* Siatka wymiarów 3-kolumnowa */
+    .params-dims-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+    }
+    .params-dim-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    .params-dim-label {
+        font-size: 9.5px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .params-dim-val {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        letter-spacing: -0.01em;
+    }
+
+    /* Wiersze w nowym panelu */
+    .params-panel .param-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #f9fafb;
+        gap: 10px;
+    }
+    .params-panel .param-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .params-panel .param-row:first-child { padding-top: 0; }
+    .params-panel .param-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6b7280;
+        flex-shrink: 0;
+        line-height: 1.4;
+    }
+    .params-panel .param-value {
+        font-size: 12px;
+        font-weight: 600;
+        color: #111827;
+        text-align: right;
+        line-height: 1.4;
+    }
+
+    /* "nie wybrano" — czerwone */
+    .params-panel .param-value[data-unset="1"],
+    .params-panel .params-type-name[data-unset="1"] {
+        color: #ef4444 !important;
+    }
+
+    /* Mobile */
+    @media (max-width: 767px) {
+        .params-panel { border-radius: 0.75rem; }
+        .params-dims-grid { gap: 4px; }
+        .params-dim-val { font-size: 13px; }
+        .params-group { padding: 10px 14px; }
+        .params-panel-header { padding: 12px 14px 10px; }
+    }
+
+
+        /* ---- Profesjonalne wiersze parametrów ---- */
     .param-row {
         display: flex;
         align-items: center;
