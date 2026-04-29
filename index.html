@@ -1128,6 +1128,18 @@
           <div id="customerReview" class="text-stone-600 text-base italic review-fade-enter flex items-center justify-center space-x-2 min-h-[4em]"></div>
         </div>
 
+<!-- MASZ PYTANIE -->
+<button onclick="openContactModal()" style="width:100%;display:flex;align-items:center;gap:13px;padding:13px 16px;background:#fff;border:1px solid #e7e5e4;border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,0.06);margin-bottom:8px;cursor:pointer;text-align:left;transition:border-color .18s,box-shadow .18s;" onmouseover="this.style.borderColor='#16a34a';this.style.boxShadow='0 2px 12px rgba(22,163,74,0.10)'" onmouseout="this.style.borderColor='#e7e5e4';this.style.boxShadow='0 1px 6px rgba(0,0,0,0.06)'">
+  <div style="width:38px;height:38px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  </div>
+  <div style="flex:1;min-width:0;">
+    <p style="margin:0 0 2px;font-size:13.5px;font-weight:700;color:#111827;line-height:1.2;">Masz pytanie?</p>
+    <p style="margin:0;font-size:11.5px;color:#9ca3af;line-height:1.3;">Napisz do nas</p>
+  </div>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
 <!-- SOCIAL MEDIA -->
 <div style="background:#fff;border-radius:14px;border:1px solid #e7e5e4;box-shadow:0 1px 6px rgba(0,0,0,0.06);padding:12px 10px 10px;margin-bottom:8px;">
   <p style="text-align:center;font-size:9px;font-weight:700;color:#b5b0ab;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 9px 0;">Znajdziesz nas również tutaj</p>
@@ -1313,9 +1325,139 @@
     <span style="color:#d1d5db;font-size:.75rem;">·</span>
     <a href="polityka.html" style="font-size:.75rem;color:#6b7280;text-decoration:none;font-weight:500;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">Polityka prywatności</a>
     <span style="color:#d1d5db;font-size:.75rem;">·</span>
-    <span style="font-size:.75rem;color:#6b7280;font-weight:500">Kontakt: regaliki.pl@gmail.com</span>
+    <button onclick="openContactModal()" style="font-size:.75rem;color:#6b7280;font-weight:500;background:none;border:none;cursor:pointer;padding:0;transition:color .15s" onmouseover="this.style.color='#16a34a'" onmouseout="this.style.color='#6b7280'">✉️ Napisz do nas</button>
   </div>
 
 </footer>
+
+<!-- ══════════════════════════════════════════════════════
+     MODAL KONTAKTOWY
+     ══════════════════════════════════════════════════════ -->
+<div id="contactModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:3000;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeContactModal()">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.18);overflow:hidden;">
+
+    <!-- Nagłówek -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 16px;border-bottom:1px solid #f3f4f6;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:16px;font-weight:700;color:#111827">Masz pytanie?</h3>
+          <p style="margin:0;font-size:12px;color:#9ca3af">Odpowiadamy w ciągu 24h</p>
+        </div>
+      </div>
+      <button onclick="closeContactModal()" style="width:32px;height:32px;border-radius:50%;border:none;background:#f3f4f6;cursor:pointer;font-size:18px;color:#6b7280;display:flex;align-items:center;justify-content:center;line-height:1;" aria-label="Zamknij">&times;</button>
+    </div>
+
+    <!-- Formularz -->
+    <div style="padding:22px;">
+      <div id="contactSuccess" style="display:none;text-align:center;padding:28px 16px;">
+        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+        <h4 style="margin:0 0 8px;font-size:17px;font-weight:700;color:#111827">Wiadomość wysłana!</h4>
+        <p style="margin:0;font-size:14px;color:#6b7280">Odpiszemy jak najszybciej, zazwyczaj w ciągu 24 godzin.</p>
+      </div>
+
+      <div id="contactForm">
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Imię i nazwisko *</label>
+          <input id="contactName" type="text" placeholder="Jan Kowalski" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;color:#111827;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Adres e-mail *</label>
+          <input id="contactEmail" type="email" placeholder="jan@example.com" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;color:#111827;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'">
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;">Wiadomość *</label>
+          <textarea id="contactMessage" rows="5" placeholder="Opisz czego potrzebujesz — chętnie pomożemy!" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:9px;font-size:14px;color:#111827;outline:none;transition:border-color .15s;resize:vertical;font-family:inherit;" onfocus="this.style.borderColor='#16a34a'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+        </div>
+
+        <div id="contactError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:14px;"></div>
+
+        <button onclick="submitContactForm()" id="contactSubmitBtn" style="width:100%;padding:13px;background:#16a34a;color:#fff;border:none;border-radius:11px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+          Wyślij wiadomość
+        </button>
+        <p style="text-align:center;font-size:11px;color:#9ca3af;margin:10px 0 0;">Możesz też napisać bezpośrednio: <a href="mailto:regaliki.pl@gmail.com" style="color:#16a34a;text-decoration:none;">regaliki.pl@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openContactModal() {
+  const overlay = document.getElementById('contactModalOverlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  // Reset formularza
+  document.getElementById('contactForm').style.display = 'block';
+  document.getElementById('contactSuccess').style.display = 'none';
+  document.getElementById('contactError').style.display = 'none';
+  ['contactName','contactEmail','contactMessage'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  setTimeout(() => document.getElementById('contactName')?.focus(), 100);
+}
+
+function closeContactModal() {
+  document.getElementById('contactModalOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function submitContactForm() {
+  const name    = document.getElementById('contactName').value.trim();
+  const email   = document.getElementById('contactEmail').value.trim();
+  const phone   = '';
+  const message = document.getElementById('contactMessage').value.trim();
+  const errEl   = document.getElementById('contactError');
+  const btn     = document.getElementById('contactSubmitBtn');
+
+  errEl.style.display = 'none';
+
+  if (!name) { showContactError('Podaj imię i nazwisko.'); return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showContactError('Podaj prawidłowy adres e-mail.'); return; }
+  if (!message) { showContactError('Napisz wiadomość.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Wysyłanie…';
+
+  try {
+    const BACKEND = 'https://polki-backend-production.up.railway.app';
+    const r = await fetch(`${BACKEND}/api/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, message })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.getElementById('contactForm').style.display = 'none';
+      document.getElementById('contactSuccess').style.display = 'block';
+    } else {
+      showContactError(d.error || 'Nie udało się wysłać. Spróbuj ponownie.');
+    }
+  } catch(e) {
+    showContactError('Błąd połączenia. Spróbuj ponownie lub napisz na regaliki.pl@gmail.com');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Wyślij wiadomość';
+  }
+}
+
+function showContactError(msg) {
+  const el = document.getElementById('contactError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// Zamknij na ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('contactModalOverlay').style.display !== 'none') {
+    closeContactModal();
+  }
+});
+</script>
+
 </body>
 </html>
