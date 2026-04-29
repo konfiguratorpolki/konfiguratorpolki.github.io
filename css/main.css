@@ -2175,6 +2175,20 @@ body.no-scroll {
         align-items: center;
     }
 
+    /* Kompaktowy padding wewnętrzny panelu parametrów */
+    #orderSummarySection .order-summary-header {
+        padding: 12px 18px 10px !important;
+    }
+    #orderSummarySection .order-summary-header h2 {
+        font-size: 13px !important;
+    }
+    #orderSummarySection > div.px-5 {
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+        padding-top: 2px !important;
+        padding-bottom: 10px !important;
+    }
+
     /* ============================================================
        NOWA STRUKTURA PANELU — jasny styl
        ============================================================ */
@@ -2246,66 +2260,80 @@ body.no-scroll {
         padding: 12px 0;
     }
     .summary-section-border {
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid #f0f0f0;
     }
     .summary-section-label {
-        font-size: 9.5px;
-        font-weight: 700;
-        color: #9ca3af;
+        font-size: 8.5px;
+        font-weight: 800;
+        color: #6b7280;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
-        margin-bottom: 6px;
+        letter-spacing: 0.1em;
+        margin-bottom: 8px;
     }
     .summary-type-name {
-        font-size: 14.5px;
+        font-size: 13px;
         font-weight: 700;
         color: #111827;
         line-height: 1.3;
+        letter-spacing: -0.01em;
     }
+    /* Siatka 3-kolumnowa dla wymiarów */
     .summary-dims-grid {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         gap: 0;
-        margin-top: 2px;
+        margin-top: 4px;
     }
     .summary-dim-cell {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
     }
     .summary-dim-label {
-        font-size: 9.5px;
-        font-weight: 700;
-        color: #9ca3af;
+        font-size: 8.5px;
+        font-weight: 800;
+        color: #6b7280;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.08em;
     }
     .summary-dim-value {
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         color: #111827;
-        line-height: 1.3;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
     }
+    /* Wiersze label/value */
     .summary-row {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
         gap: 8px;
-        padding: 4px 0;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .summary-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
     }
     .summary-row-label {
-        font-size: 12.5px;
-        font-weight: 400;
+        font-size: 11.5px;
+        font-weight: 500;
         color: #374151;
         flex-shrink: 0;
         line-height: 1.4;
     }
     .summary-row-value {
-        font-size: 12.5px;
+        font-size: 11.5px;
         font-weight: 600;
         color: #111827;
         text-align: right;
         line-height: 1.4;
+        white-space: nowrap;
+    }
+    .summary-row-value.unset {
+        color: #9ca3af;
+        font-weight: 500;
     }
 
     /* Siatka wymiarów 3-kolumnowa */
@@ -2416,43 +2444,43 @@ body.no-scroll {
             border-radius: 0.75rem !important;
         }
         #orderSummarySection .order-summary-header {
-            padding: 0.875rem 1rem 0.625rem !important;
+            padding: 0.75rem 1rem 0.5rem !important;
         }
         #orderSummarySection h2 {
-            font-size: 0.875rem !important;
+            font-size: 0.8rem !important;
         }
         #orderSummarySection > div:last-of-type {
-            padding: 0.25rem 1rem 0.75rem !important;
+            padding: 0.25rem 1rem 0.625rem !important;
         }
         /* Nowy layout summary — mobile */
         .summary-section {
             padding: 10px 0;
         }
         .summary-section-label {
-            font-size: 9px;
-            margin-bottom: 5px;
+            font-size: 8px;
+            margin-bottom: 6px;
         }
         .summary-type-name {
-            font-size: 13.5px;
+            font-size: 12px;
         }
         .summary-dims-grid {
             grid-template-columns: 1fr 1fr 1fr;
             gap: 0;
         }
         .summary-dim-label {
-            font-size: 8.5px;
+            font-size: 7.5px;
         }
         .summary-dim-value {
-            font-size: 13px;
+            font-size: 12px;
         }
         .summary-row {
-            padding: 3px 0;
+            padding: 5px 0;
         }
         .summary-row-label {
-            font-size: 12px;
+            font-size: 11px;
         }
         .summary-row-value {
-            font-size: 12px;
+            font-size: 11px;
         }
         .params-mount-badge {
             font-size: 10px;
@@ -2462,6 +2490,13 @@ body.no-scroll {
 
     #desktopCartContainer {
         position: relative;
+    }
+
+    /* Dopłaty +50 zł — zawsze czerwone */
+    #widthCustomBadge {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
+        border-color: #fecaca !important;
     }
 
     .cart-badge {
@@ -3020,12 +3055,12 @@ body.no-scroll {
 .sp-custom-sub { font-size: 10px; color: #9ca3af; margin-top: 0; }
 .sp-custom-right { display: flex; align-items: center; gap: 8px; }
 .sp-custom-badge {
-    font-size: 9px; font-weight: 700; color: #16a34a;
-    background: #f0fdf4; border: 1px solid #bbf7d0;
+    font-size: 9px; font-weight: 700; color: #dc2626;
+    background: #fef2f2; border: 1px solid #fecaca;
     padding: 2px 7px; border-radius: 20px;
     transition: background 0.25s, color 0.25s;
 }
-.sp-panel.sp-custom-active .sp-custom-badge { background: #16a34a; color: #fff; border-color: #16a34a; }
+.sp-panel.sp-custom-active .sp-custom-badge { background: #dc2626; color: #fff; border-color: #dc2626; }
 
 /* toggle switch */
 .custom-shelf-toggle-switch { width: 40px; height: 22px; background: #d1d5db; border-radius: 11px; position: relative; transition: background 0.3s; flex-shrink: 0; cursor: pointer; }
