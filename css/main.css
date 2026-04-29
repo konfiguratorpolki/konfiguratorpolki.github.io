@@ -2422,44 +2422,41 @@ body.no-scroll {
             font-size: 0.875rem !important;
         }
         #orderSummarySection > div:last-of-type {
-            padding: 0.25rem 0.875rem 0.75rem !important;
+            padding: 0.25rem 1rem 0.75rem !important;
         }
-        #orderSummarySection ul {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr;
+        /* Nowy layout summary — mobile */
+        .summary-section {
+            padding: 10px 0;
         }
-        .param-row {
-            padding: 5px 4px !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            justify-content: flex-start !important;
-            border-bottom: 1px solid #f9fafb !important;
-            border-top: none !important;
-            gap: 2px !important;
+        .summary-section-label {
+            font-size: 9px;
+            margin-bottom: 5px;
         }
-        .param-section-start {
-            border-top: none !important;
-            margin-top: 0 !important;
-            padding-top: 5px !important;
+        .summary-type-name {
+            font-size: 13.5px;
         }
-        .param-label {
-            font-size: 7px !important;
-            font-weight: 700 !important;
-            color: #9ca3af !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.06em !important;
-            line-height: 1 !important;
+        .summary-dims-grid {
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
         }
-        .param-value {
-            font-size: 10.5px !important;
-            font-weight: 600 !important;
-            color: #111827 !important;
-            text-align: left !important;
+        .summary-dim-label {
+            font-size: 8.5px;
         }
-        /* Pełna szerokość na mobile dla niektórych wierszy */
-        .param-row.full-width-row,
-        #customPosSummaryRow {
-            grid-column: 1 / -1 !important;
+        .summary-dim-value {
+            font-size: 13px;
+        }
+        .summary-row {
+            padding: 3px 0;
+        }
+        .summary-row-label {
+            font-size: 12px;
+        }
+        .summary-row-value {
+            font-size: 12px;
+        }
+        .params-mount-badge {
+            font-size: 10px;
+            padding: 2px 8px;
         }
     }
 
