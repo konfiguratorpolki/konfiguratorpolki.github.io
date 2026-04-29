@@ -1057,41 +1057,89 @@
             <div class="order-summary-header px-5 pt-5 pb-3 border-b border-stone-100">
                 <h2 class="text-base font-bold text-stone-800 tracking-tight">Parametry półki</h2>
             </div>
-            <div class="px-5 py-3">
-            <ul class="text-sm space-y-0">
+            <div class="px-5 py-4" style="display:flex;flex-direction:column;gap:0;">
 
-                <!-- Rodzaj -->
-                <li class="param-row full-width-row"><span class="param-label">Rodzaj półki</span><span id="shelfTypeSummary" class="param-value">nie wybrano</span></li>
-                <li id="mugShelfMountSummaryItem" class="param-row full-width-row" style="display: none;"><span class="param-label">Montaż</span><span id="mugShelfMountSummary" class="param-value"></span></li>
+                <!-- RODZAJ PÓŁKI -->
+                <div class="summary-section">
+                    <div class="summary-section-label">Rodzaj półki</div>
+                    <div id="shelfTypeSummary" class="summary-type-name">nie wybrano</div>
+                    <span id="mugShelfMountSummary" class="params-mount-badge" style="display:none;margin-top:6px;"></span>
+                </div>
 
-                <!-- Wymiary -->
-                <li class="param-row param-section-start"><span class="param-label"><span id="widthSummaryLabel">Szerokość</span></span>
-                    <span class="param-value flex items-center gap-1.5">
-                        <span id="widthSummary"></span>
-                        <span id="widthCustomBadge" style="display:none" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">+50 zł</span>
-                    </span>
-                </li>
-                <li class="param-row param-section-start"><span class="param-label"><span id="heightSummaryLabel">Wysokość</span></span><span id="heightSummary" class="param-value"></span></li>
-                <li class="param-row"><span class="param-label"><span id="depthSummaryLabel">Głębokość</span></span><span id="depthSummary" class="param-value"></span></li>
-                <li class="param-row" style="display: none;"><span class="param-label"><span id="connectingWidthSummaryLabel">Szer. łączenia</span></span><span id="connectingWidthSummary" class="param-value"></span></li>
+                <!-- WYMIARY -->
+                <div class="summary-section summary-section-border">
+                    <div class="summary-section-label">Wymiary</div>
+                    <div class="summary-dims-grid">
+                        <div class="summary-dim-cell">
+                            <span class="summary-dim-label" id="widthSummaryLabel">Szerokość</span>
+                            <span class="summary-dim-value">
+                                <span id="widthSummary">—</span>
+                                <span id="widthCustomBadge" style="display:none" class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">+50 zł</span>
+                            </span>
+                        </div>
+                        <div class="summary-dim-cell">
+                            <span class="summary-dim-label" id="heightSummaryLabel">Wysokość</span>
+                            <span id="heightSummary" class="summary-dim-value">—</span>
+                        </div>
+                        <div class="summary-dim-cell">
+                            <span class="summary-dim-label" id="depthSummaryLabel">Głębokość</span>
+                            <span id="depthSummary" class="summary-dim-value">—</span>
+                        </div>
+                    </div>
+                    <!-- Modular extra row -->
+                    <div id="connectingWidthSummaryRow" style="display:none;margin-top:6px;">
+                        <span class="summary-dim-label"><span id="connectingWidthSummaryLabel">Komponenty (Szer.)</span></span>
+                        <span id="connectingWidthSummary" class="summary-dim-value" style="display:block;font-size:13px;font-weight:700;color:#111827;margin-top:2px;"></span>
+                    </div>
+                </div>
 
-                <!-- Kolory -->
-                <li class="param-row param-section-start full-width-row"><span class="param-label">Kolor boków</span><span id="sideColorSummary" class="param-value">nie wybrano</span></li>
-                <li class="param-row full-width-row"><span class="param-label"><span id="shelfColorSummaryLabel">Kolor półek</span></span><span id="shelfColorSummary" class="param-value">nie wybrano</span></li>
+                <!-- KOLORY -->
+                <div class="summary-section summary-section-border">
+                    <div class="summary-section-label">Kolory</div>
+                    <div class="summary-row">
+                        <span class="summary-row-label">Kolor boków</span>
+                        <span id="sideColorSummary" class="summary-row-value">nie wybrano</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-row-label"><span id="shelfColorSummaryLabel">Kolor półek i podstaw</span></span>
+                        <span id="shelfColorSummary" class="summary-row-value">nie wybrano</span>
+                    </div>
+                </div>
 
-                <!-- Półki -->
-                <li class="param-row param-section-start"><span class="param-label"><span id="shelfCountSummaryLabel">Półki wewn.</span></span><span id="shelfCountSummary" class="param-value"></span></li>
-                <li class="param-row" style="display:none !important"><span class="param-label">Odległość</span><span id="gapSummary" class="param-value"></span></li>
-                <li id="customPosSummaryRow" class="param-row param-custom-pos full-width-row" style="display:none"><div id="customPosSummary" class="w-full"></div></li>
+                <!-- PÓŁKI I OPCJE -->
+                <div class="summary-section summary-section-border">
+                    <div class="summary-section-label">Półki i opcje</div>
+                    <div class="summary-row">
+                        <span class="summary-row-label"><span id="shelfCountSummaryLabel">Ilość półek wewn.</span></span>
+                        <span id="shelfCountSummary" class="summary-row-value"></span>
+                    </div>
+                    <div class="summary-row" style="display:none !important">
+                        <span class="summary-row-label">Odległość</span>
+                        <span id="gapSummary" class="summary-row-value"></span>
+                    </div>
+                    <div id="customPosSummaryRow" style="display:none;margin-top:4px;">
+                        <div id="customPosSummary" class="w-full"></div>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-row-label">Opcje</span>
+                        <span id="extraOptionsSummary" class="summary-row-value">standardowa</span>
+                    </div>
+                </div>
 
-                <!-- Opcje / materiał -->
-                <li class="param-row param-section-start full-width-row"><span class="param-label">Opcje</span><span id="extraOptionsSummary" class="param-value">standardowa</span></li>
-                <li class="param-row full-width-row"><span class="param-label">Materiał</span><span class="param-value">płyta laminowana gr. 1,8 cm</span></li>
-                <li class="param-row full-width-row"><span class="param-label">Realizacja</span><span class="param-value">3–7 dni roboczych</span></li>
+                <!-- PRODUKCJA -->
+                <div class="summary-section summary-section-border">
+                    <div class="summary-section-label">Produkcja</div>
+                    <div class="summary-row">
+                        <span class="summary-row-label">Materiał</span>
+                        <span class="summary-row-value">płyta laminowana gr. 1,8 cm</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-row-label">Realizacja</span>
+                        <span class="summary-row-value">3–7 dni roboczych</span>
+                    </div>
+                </div>
 
-            </ul>
             </div>
-
         </div>
 
         <!-- ===== CENA + AKCJE — osobna czysta karta ===== -->
