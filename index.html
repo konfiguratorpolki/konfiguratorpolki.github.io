@@ -526,13 +526,13 @@
                         <option value="50">50 cm</option>
                         <option value="60">60 cm</option>
                         <option value="84">84 cm</option>
-                        <option value="custom">Niestandardowa (35-59 cm)</option>
+                        <option value="custom">Wymiar własny</option>
                     </select>
                     <div class="mt-2">
                         <input type="range" id="customWidthInput" min="35" max="59" step="1" value="35" style="display:none;" class="mt-2 cursor-pointer" oninput="let val = this.value; if (val === '50') { val = '49'; this.value = val; } document.getElementById('customWidthDisplay').textContent=val+' cm'; handleDimensionChange();">
                         <div class="flex justify-between items-center mt-1">
                             <span id="customWidthDisplay" style="display:none; font-weight:bold;" class="text-stone-700"></span>
-                            <small id="customWidthFee" style="display:none; font-size:.8rem; color:red;">dopłata +50 zł</small>
+                            <span id="customWidthFee" style="display:none; font-size:10px; font-weight:600; color:#3B6D11; background:#EAF3DE; border:1px solid #C0DD97; padding:2px 8px; border-radius:20px;">+50 zł</span>
                         </div>
                     </div>
                 </div>
@@ -643,7 +643,7 @@
                     <div class="mdp-row"><span class="mdp-label">Kolor półek</span><span class="mdp-value not-set" id="mdp-shelfcolor">nie wybrano</span></div>
                     <div class="mdp-row" id="mdp-shelfcount-row"><span class="mdp-label">Półki wewn.</span><span class="mdp-value not-set" id="mdp-shelfcount">nie wybrano</span></div>
                     <div class="mdp-row" id="mdp-gap-row"><span class="mdp-label">Odstęp między półkami</span><span class="mdp-value not-set" id="mdp-gap">—</span></div>
-                    <div class="mdp-row" id="mdp-custompos-surcharge-row" style="display:none"><span class="mdp-label">Własne rozm.</span><span class="mdp-value" style="color:#dc2626;font-weight:800">+50 zł dopłata</span></div>
+                    <div class="mdp-row" id="mdp-custompos-surcharge-row" style="display:none"><span class="mdp-label">Rozmieszczenie własne</span><span class="mdp-value" style="color:#3B6D11;font-weight:700">+50 zł</span></div>
                     <div class="mdp-row" id="mdp-extras-row"><span class="mdp-label">Opcje</span><span class="mdp-value" id="mdp-extras">standardowa</span></div>
                 </div>
             </div>
@@ -969,12 +969,11 @@
                              <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
                          </svg>
                          <div>
-                             <div class="sp-custom-label">Własne rozmieszczenie</div>
-                             <div class="sp-custom-sub">Przeciągnij półki na modelu 3D</div>
+                             <div class="sp-custom-label">Rozmieszczenie półek</div>
+                             <div class="sp-custom-sub">Ustaw własnoręcznie na modelu 3D · <span id="spCustomPriceInline" style="color:#3B6D11;font-weight:600">+50 zł</span></div>
                          </div>
                      </div>
                      <div class="sp-custom-right">
-                         <span class="sp-custom-badge">+50 zł</span>
                          <div class="custom-shelf-toggle-switch" id="customShelfSwitch">
                              <div class="custom-shelf-switch-knob"></div>
                          </div>
@@ -1076,7 +1075,7 @@
                         <div class="summary-dim-cell">
                             <span class="summary-dim-label" id="widthSummaryLabel">Szerokość</span>
                             <span id="widthSummary" class="summary-dim-value">—</span>
-                            <span id="widthCustomBadge" style="display:none;margin-top:3px;background:#f3f4f6;color:#374151;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:0.03em;border:1px solid #e5e7eb;width:fit-content;">+50 zł</span>
+                            <span id="widthCustomBadge" style="display:none;margin-top:3px;background:#EAF3DE;color:#3B6D11;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:0.03em;border:1px solid #C0DD97;width:fit-content;">+50 zł</span>
                         </div>
                         <div class="summary-dim-cell">
                             <span class="summary-dim-label" id="heightSummaryLabel">Wysokość</span>
