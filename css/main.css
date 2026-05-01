@@ -1121,7 +1121,7 @@ body.no-scroll {
         #mobileCustomShelfPanel.csp-active .csp-icon { color: #16a34a; }
         #mobileCustomShelfPanel.csp-active .csp-label { color: #16a34a; }
         #mobileCustomShelfPanel .csp-surcharge {
-            font-size: 7px; font-weight: 800; color: #dc2626;
+            font-size: 7px; font-weight: 800; color: #3B6D11;
             text-align: center; line-height: 1.2;
         }
 
@@ -3064,12 +3064,12 @@ body.no-scroll {
 .sp-custom-sub { font-size: 10px; color: #9ca3af; margin-top: 0; }
 .sp-custom-right { display: flex; align-items: center; gap: 8px; }
 .sp-custom-badge {
-    font-size: 9px; font-weight: 700; color: #dc2626;
-    background: #fef2f2; border: 1px solid #fecaca;
+    font-size: 9px; font-weight: 700; color: #3B6D11;
+    background: #EAF3DE; border: 1px solid #C0DD97;
     padding: 2px 7px; border-radius: 20px;
     transition: background 0.25s, color 0.25s;
 }
-.sp-panel.sp-custom-active .sp-custom-badge { background: #dc2626; color: #fff; border-color: #dc2626; }
+.sp-panel.sp-custom-active .sp-custom-badge { background: #3B6D11; color: #fff; border-color: #3B6D11; }
 
 /* toggle switch */
 .custom-shelf-toggle-switch { width: 40px; height: 22px; background: #d1d5db; border-radius: 11px; position: relative; transition: background 0.3s; flex-shrink: 0; cursor: pointer; }
